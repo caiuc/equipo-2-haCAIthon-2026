@@ -18,6 +18,8 @@ export type PublishResult = {
   message: string;
 };
 
+type VoiceInsert = Database["public"]["Tables"]["voice_records"]["Insert"];
+
 export async function publishClinicalConfirmation(
   supabase: SupabaseClient<Database>,
   input: PublishInput,
@@ -25,37 +27,30 @@ export async function publishClinicalConfirmation(
   const structure = enrichStructure(input.structure);
   const { hospitalId, professionalId } = input;
   const sttEngine = input.sttEngine;
-  const durationSeconds = input.durationSeconds;
+  const durationSeconds = finiteNumber(input.durationSeconds);
   const edited = Boolean(input.edited);
   const now = new Date().toISOString();
   const patientId = await upsertPatient(supabase, hospitalId, structure);
+  const recordStructure = toVoiceRecordStructure(structure);
 
-  const voice = await supabase
-    .from("voice_records")
-    .insert({
-      hospital_id: hospitalId,
-      professional_id: professionalId,
-      patient_id: patientId,
-      transcript: structure.transcript,
-      stt_engine:
-        sttEngine ||
-        (structure.source === "deepseek" ? "groq-whisper+deepseek" : "regex"),
-      duration_seconds: durationSeconds ?? null,
-      status: edited ? "edited" : "validated",
-    })
-    .select("id")
-    .single();
-  if (voice.error) throw new Error(voice.error.message);
+  const baseRow: VoiceInsert = {
+    hospital_id: hospitalId,
+    professional_id: professionalId,
+    patient_id: patientId,
+    transcript: structure.transcript,
+    stt_engine:
+      sttEngine ||
+      (structure.source === "deepseek" ? "groq-whisper+deepseek" : "regex"),
+    duration_seconds: durationSeconds,
+    status: edited ? "edited" : "validated",
+  };
 
-  void supabase
-    .from("voice_records")
-    .update({ structure: structure as unknown as Json })
-    .eq("id", voice.data.id);
+  const voice = await insertVoiceRecord(supabase, baseRow, recordStructure);
 
-  const snapshot = {
-    form: structure,
+  const snapshot = jsonSafe({
+    form: recordStructure,
     source: structure.source,
-    isolation_required: structure.isolation_required ?? null,
+    isolation_required: structure.isolation_required,
     criticality: structure.criticality,
     bed_actions: structure.bed_actions,
     analysis: structure.analysis,
@@ -63,17 +58,17 @@ export async function publishClinicalConfirmation(
     vital_risk: structure.vital_risk,
     patient_name: structure.patient_name,
     edited,
-  } as unknown as Json;
+  });
 
   if (structure.events.length) {
     const rows = structure.events.map((event_kind) => ({
-      voice_record_id: voice.data.id,
+      voice_record_id: voice.id,
       hospital_id: hospitalId,
       patient_id: patientId,
       event_kind,
       icu_certainty: structure.icu.certainty,
       relevant_condition: structure.relevant_condition,
-      confidence: structure.icu.confidence,
+      confidence: finiteNumber(structure.icu.confidence),
       confirmation: "confirmed" as const,
       confirmed_at: now,
       payload: snapshot,
@@ -117,10 +112,61 @@ export async function publishClinicalConfirmation(
   }
 
   return {
-    voiceRecordId: voice.data.id,
+    voiceRecordId: voice.id,
     patientId,
     message: "Publicado en la consola central",
   };
+}
+
+export function toVoiceRecordStructure(structure: ClinicalStructure): Json {
+  return jsonSafe({
+    patient_code_hint: structure.patient_code_hint,
+    patient_name: structure.patient_name,
+    sex: structure.sex,
+    age_years: finiteNumber(structure.age_years),
+    requires_hospitalization: structure.requires_hospitalization,
+    icu: {
+      certainty: structure.icu.certainty,
+      confidence: finiteNumber(structure.icu.confidence),
+    },
+    uti_required: structure.uti_required,
+    basic_bed_required: structure.basic_bed_required,
+    isolation_required: structure.isolation_required,
+    relevant_condition: structure.relevant_condition,
+    clinical_summary: structure.clinical_summary,
+    analysis: structure.analysis,
+    criticality: structure.criticality,
+    vital_risk: structure.vital_risk,
+    bed_actions: structure.bed_actions,
+    discharge_ordered: structure.discharge_ordered,
+    events: structure.events,
+    confidence: "pending_verification",
+    transcript: structure.transcript,
+    source: structure.source,
+  });
+}
+
+async function insertVoiceRecord(
+  supabase: SupabaseClient<Database>,
+  baseRow: VoiceInsert,
+  structure: Json,
+): Promise<{ id: string }> {
+  const withStructure = await supabase
+    .from("voice_records")
+    .insert({ ...baseRow, structure })
+    .select("id")
+    .single();
+  if (!withStructure.error && withStructure.data) return withStructure.data;
+  if (!isMissingColumn(withStructure.error?.message, "structure")) {
+    throw new Error(withStructure.error?.message ?? "No se pudo guardar el registro");
+  }
+  const fallback = await supabase
+    .from("voice_records")
+    .insert(baseRow)
+    .select("id")
+    .single();
+  if (fallback.error) throw new Error(fallback.error.message);
+  return fallback.data;
 }
 
 async function upsertPatient(
@@ -142,17 +188,20 @@ async function upsertPatient(
         code,
         hospital_id: hospitalId,
         sex: structure.sex,
-        age_years: structure.age_years,
+        age_years: finiteNumber(structure.age_years),
       });
   if (structure.patient_name) {
-    void supabase
+    const named = await supabase
       .from("patients")
       .update({
         display_name: structure.patient_name,
         sex: structure.sex,
-        age_years: structure.age_years,
+        age_years: finiteNumber(structure.age_years),
       })
       .eq("id", patientId);
+    if (named.error && !isMissingColumn(named.error.message, "display_name")) {
+      throw new Error(named.error.message);
+    }
   }
   return patientId;
 }
@@ -202,4 +251,29 @@ async function applyCapacityDelta(
     .eq("hospital_id", hospitalId)
     .eq("bed_kind", kind);
   if (updated.error) throw new Error(updated.error.message);
+}
+
+function finiteNumber(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function jsonSafe(value: unknown): Json {
+  return JSON.parse(
+    JSON.stringify(value, (_key, item) => {
+      if (typeof item === "number" && !Number.isFinite(item)) return null;
+      if (item === undefined) return null;
+      return item;
+    }),
+  ) as Json;
+}
+
+function isMissingColumn(message: string | undefined, column: string) {
+  const text = message?.toLowerCase() ?? "";
+  return (
+    text.includes(column.toLowerCase()) &&
+    (text.includes("schema cache") ||
+      text.includes("could not find") ||
+      text.includes("does not exist") ||
+      text.includes("column"))
+  );
 }

@@ -9,12 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "animejs": "^3.2.2",
+    "mapbox-gl": "^3.28.1",
     "next": "16.3.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "react-map-gl": "^8.1.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/animejs": "^3.1.13",
+    "@types/mapbox-gl": "^3.4.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

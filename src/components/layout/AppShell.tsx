@@ -1,5 +1,6 @@
 "use client";
 
+import { SirenaMark } from "@/components/brand/SirenaLogo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -12,17 +13,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[color-mix(in_oklab,var(--paper)_92%,transparent)] backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4 px-4 py-3 lg:px-6">
           <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--blue)] font-mono text-xs font-bold text-white">
-              CV
-            </span>
-            <span>
-              <span className="block text-sm font-semibold tracking-tight">
-                Continuidad Vital
-              </span>
-              <span className="block text-[11px] text-[var(--muted)]">
-                Gestión de red · datos sintéticos
-              </span>
-            </span>
+            <SirenaMark size={32} />
           </Link>
           <nav className="flex items-center gap-1 text-sm">
             <NavLink href="/registro" active={pathname.startsWith("/registro")}>
@@ -39,7 +30,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
       <main className="flex-1">{children}</main>
       <footer className="border-t border-[var(--line)] px-4 py-3 text-center text-[11px] text-[var(--muted)]">
-        Prototipo HaCAiThon · audio no almacenado · no conecta MINSAL ni fichas clínicas
+        Prototipo HaCAiThon · SIRENA · audio no almacenado · no conecta MINSAL ni fichas clínicas
       </footer>
     </div>
   );

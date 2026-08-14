@@ -1,6 +1,6 @@
 [Seguro] Una arquitectura no genera valor por tener un mapa o IA; genera valor si reduce el tiempo entre **“se interrumpió un tratamiento”** y **“alguien asumió una acción concreta para proteger al paciente”**.
 
-# Continuidad Vital
+# SIRENA
 
 [Probable] La propuesta de valor central sería:
 
@@ -366,6 +366,6 @@ flowchart TD
 
 [Probable] La frase final sería:
 
-> **“En una catástrofe, conocer el daño no basta. Continuidad Vital transforma una interrupción en una acción asignada antes de que el paciente pierda su tratamiento.”**
+> **“En una catástrofe, conocer el daño no basta. SIRENA transforma una interrupción en una acción asignada antes de que el paciente pierda su tratamiento.”**
 
 [Seguro] Esa es la diferencia entre un mapa informativo y una solución con valor operacional.

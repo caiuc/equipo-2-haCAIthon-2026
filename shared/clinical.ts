@@ -32,9 +32,18 @@ export const DEMO_UNCERTAINTY_PHRASE =
 export const DEMO_ISOLATION_PHRASE =
   "Paciente masculino de 72 años, insuficiencia respiratoria, se indica hospitalización. Posible requerimiento UCI. Actualmente estable. Requiere aislamiento.";
 
+export type Criticality = "high" | "medium" | "low";
+export type BedActionKind = "occupy" | "vacate";
+
 export interface IcuExtraction {
   certainty: IcuCertainty;
   confidence: number | null;
+}
+
+export interface BedAction {
+  kind: BedKind;
+  action: BedActionKind;
+  label: string;
 }
 
 export interface ClinicalStructure {
@@ -47,6 +56,11 @@ export interface ClinicalStructure {
   basic_bed_required: boolean | null;
   isolation_required: boolean | null;
   relevant_condition: string | null;
+  clinical_summary: string | null;
+  analysis: string | null;
+  criticality: Criticality;
+  vital_risk: boolean | null;
+  bed_actions: BedAction[];
   discharge_ordered: boolean;
   events: EventKind[];
   confidence: "pending_verification";
@@ -74,6 +88,27 @@ export const BED_LABEL: Record<BedKind, string> = {
   basica: "Básicas",
 };
 
+export const CRITICALITY_LABEL: Record<Criticality, string> = {
+  high: "Alta",
+  medium: "Media",
+  low: "Baja",
+};
+
+export const CRITICAL_EVENT_KINDS = new Set<EventKind>([
+  "POSSIBLE_ICU_REQUIREMENT",
+  "ICU_CONFIRMED",
+  "UTI_REQUIRED",
+  "ISOLATION_REQUIRED",
+]);
+
+export function bedActionLabel(
+  action: BedActionKind,
+  kind: BedKind,
+): string {
+  const bed = BED_LABEL[kind];
+  return action === "occupy" ? `Ocupa demanda ${bed}` : `Libera cama ${bed}`;
+}
+
 export function emptyStructure(transcript: string): ClinicalStructure {
   return {
     patient_code_hint: null,
@@ -85,6 +120,11 @@ export function emptyStructure(transcript: string): ClinicalStructure {
     basic_bed_required: null,
     isolation_required: null,
     relevant_condition: null,
+    clinical_summary: null,
+    analysis: null,
+    criticality: "low",
+    vital_risk: null,
+    bed_actions: [],
     discharge_ordered: false,
     events: [],
     confidence: "pending_verification",
@@ -116,6 +156,106 @@ export function demandIncrements(
     delta.basica = 1;
   }
   return delta;
+}
+
+export function deriveBedActions(structure: ClinicalStructure): BedAction[] {
+  const events = new Set(structure.events);
+  const vacate =
+    structure.discharge_ordered ||
+    events.has("DISCHARGE_ORDERED") ||
+    events.has("PATIENT_DISCHARGED") ||
+    events.has("BED_AVAILABLE");
+
+  if (vacate) {
+    let kind: BedKind = "basica";
+    if (events.has("ICU_CONFIRMED") || structure.icu.certainty === "confirmed") {
+      kind = "uci";
+    } else if (events.has("UTI_REQUIRED") || structure.uti_required) {
+      kind = "uti";
+    }
+    return [{ kind, action: "vacate", label: bedActionLabel("vacate", kind) }];
+  }
+
+  const actions: BedAction[] = [];
+  const deltas = demandIncrements(structure);
+  for (const kind of ["uci", "uti", "basica"] as BedKind[]) {
+    if (!deltas[kind]) continue;
+    actions.push({
+      kind,
+      action: "occupy",
+      label: bedActionLabel("occupy", kind),
+    });
+  }
+  return actions;
+}
+
+export function deriveCriticality(structure: ClinicalStructure): Criticality {
+  if (structure.vital_risk === true || structure.icu.certainty === "confirmed") {
+    return "high";
+  }
+  if (
+    structure.icu.certainty === "possible" ||
+    structure.icu.certainty === "conditional" ||
+    structure.uti_required ||
+    structure.isolation_required
+  ) {
+    return "medium";
+  }
+  return "low";
+}
+
+export function enrichStructure(structure: ClinicalStructure): ClinicalStructure {
+  const next: ClinicalStructure = {
+    ...structure,
+    clinical_summary:
+      structure.clinical_summary?.trim() ||
+      structure.relevant_condition ||
+      null,
+    analysis: structure.analysis?.trim() ? structure.analysis.trim() : null,
+  };
+  next.bed_actions = deriveBedActions(next);
+  next.criticality = deriveCriticality(next);
+  return next;
+}
+
+export function eventsFromFlags(structure: ClinicalStructure): EventKind[] {
+  const events: EventKind[] = [];
+  if (structure.requires_hospitalization) events.push("REQUIRES_HOSPITALIZATION");
+  if (
+    structure.icu.certainty === "possible" ||
+    structure.icu.certainty === "conditional"
+  ) {
+    events.push("POSSIBLE_ICU_REQUIREMENT");
+  }
+  if (structure.icu.certainty === "confirmed") events.push("ICU_CONFIRMED");
+  if (structure.uti_required) events.push("UTI_REQUIRED");
+  if (structure.basic_bed_required) events.push("BASIC_BED_REQUIRED");
+  if (structure.isolation_required) events.push("ISOLATION_REQUIRED");
+  if (structure.discharge_ordered) events.push("DISCHARGE_ORDERED");
+  for (const extra of [
+    "PATIENT_DISCHARGED",
+    "BED_CLEANING",
+    "BED_AVAILABLE",
+    "TRANSFER_SUGGESTED",
+  ] as EventKind[]) {
+    if (structure.events.includes(extra) && !events.includes(extra)) {
+      events.push(extra);
+    }
+  }
+  return events;
+}
+
+export function patchStructure(
+  current: ClinicalStructure,
+  patch: Partial<ClinicalStructure>,
+): ClinicalStructure {
+  const next: ClinicalStructure = {
+    ...current,
+    ...patch,
+    icu: patch.icu ? { ...current.icu, ...patch.icu } : current.icu,
+  };
+  next.events = eventsFromFlags(next);
+  return enrichStructure(next);
 }
 
 export function hospitalBalance(effective: number, demand: number): number {

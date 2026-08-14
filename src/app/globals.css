@@ -54,3 +54,13 @@ body {
 .mapboxgl-popup-close-button {
   color: var(--muted);
 }
+
+@keyframes cv-mic-ring {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.cv-mic-ring {
+  animation: cv-mic-ring 1.4s ease-in-out infinite;
+}

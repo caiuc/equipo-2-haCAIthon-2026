@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
+import { SirenaLogo, SirenaMark } from "@/components/brand/SirenaLogo";
 import Link from "next/link";
 
 export function LandingPage() {
@@ -8,15 +9,7 @@ export function LandingPage() {
     <div className="min-h-full bg-[var(--bg)]">
       <header className="mx-auto flex w-full max-w-[1120px] items-center justify-between px-4 py-5 lg:px-6">
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--blue)] font-mono text-sm font-bold text-white">
-            CV
-          </span>
-          <span>
-            <span className="block text-sm font-semibold">Continuidad Vital</span>
-            <span className="block text-[11px] text-[var(--muted)]">
-              HaCAiThon 2026 · salud pública
-            </span>
-          </span>
+          <SirenaMark size={40} subtitle="HaCAiThon 2026 · salud pública" />
         </div>
         <nav className="flex items-center gap-2">
           <Link
@@ -40,7 +33,7 @@ export function LandingPage() {
             Voz clínica deliberada, convertida en capacidad efectiva.
           </h1>
           <p className="mt-4 max-w-lg text-base leading-relaxed text-[var(--muted)]">
-            Continuidad Vital no reemplaza a la UGCC. Captura lo que el
+            SIRENA no reemplaza a la UGCC. Captura lo que el
             profesional ya dijo al atender, lo estructura con IA y lo publica
             solo después de una confirmación humana.
           </p>
@@ -57,6 +50,15 @@ export function LandingPage() {
           </div>
         </div>
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6 shadow-[0_24px_80px_rgba(15,27,45,0.08)]">
+          <div className="mb-5 flex items-center gap-3">
+            <SirenaLogo size={48} />
+            <div>
+              <p className="text-sm font-semibold tracking-[0.18em]">SIRENA</p>
+              <p className="text-[11px] tracking-[0.14em] text-[var(--muted)]">
+                CAPTURA · VALIDA · PUBLICA
+              </p>
+            </div>
+          </div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--green)]">
             IA propone · humano valida
           </p>

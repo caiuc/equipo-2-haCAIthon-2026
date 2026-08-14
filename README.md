@@ -1,4 +1,4 @@
-# Continuidad Vital
+# SIRENA
 
 Voz clínica deliberada → eventos estructurados → capacidad efectiva de la red hospitalaria. Prototipo HaCAiThon 2026. **Datos 100% sintéticos.** No hay integración con MINSAL, UGCC real ni fichas clínicas.
 
@@ -32,6 +32,8 @@ En este orden, **un archivo por vez**:
 1. `supabase/001_up.sql`
 2. `supabase/002_rls.sql`
 3. `supabase/003_seed.sql`
+
+`004_voice_structure.sql` es opcional. Si el editor muestra `Failed to fetch`, no lo necesitas: el formulario queda en `clinical_events.payload`.
 
 Si aparece `policy already exists`, el paso 2 ya corrió: pega **solo** `003_seed.sql`. Ambos archivos ya son reejecutables.
 

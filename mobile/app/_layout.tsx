@@ -17,9 +17,10 @@ export default function RootLayout() {
           animation: "fade",
         }}
       >
-        <Stack.Screen name="index" options={{ title: "Continuidad Vital" }} />
+        <Stack.Screen name="index" options={{ title: "SIRENA" }} />
         <Stack.Screen name="recording" options={{ title: "Grabando" }} />
         <Stack.Screen name="review" options={{ title: "IA propone" }} />
+        <Stack.Screen name="record/[id]" options={{ title: "Ficha" }} />
         <Stack.Screen name="success" options={{ title: "Publicado" }} />
       </Stack>
     </GestureHandlerRootView>

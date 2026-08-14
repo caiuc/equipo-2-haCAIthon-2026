@@ -1,103 +1,99 @@
+import { LiveChips, VoiceBars } from "@/components/VoiceBars";
 import { PrimaryButton } from "@/components/ui";
-import { structureTranscript, transcribeRecording } from "@/services/api";
+import { useDeviceDictation } from "@/hooks/useDeviceDictation";
+import { structureTranscript } from "@/services/api";
 import { setDraftStructure, setDraftTranscript } from "@/services/draft";
-import { Audio } from "expo-av";
+import { detectLiveChips } from "@shared/clinicalParser";
 import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import { Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ScrollView, Text, View } from "react-native";
+
+function formatClock(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
 
 export default function RecordingScreen() {
   const router = useRouter();
-  const recordingRef = useRef<Audio.Recording | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
+  const dictation = useDeviceDictation();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const chips = useMemo(
+    () => detectLiveChips(dictation.transcript),
+    [dictation.transcript],
+  );
 
   useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const permission = await Audio.requestPermissionsAsync();
-      if (!permission.granted) {
-        setError("Sin permiso de micrófono. Usa una frase de demo.");
-        return;
-      }
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY,
-      );
-      if (cancelled) {
-        await recording.stopAndUnloadAsync();
-        return;
-      }
-      recordingRef.current = recording;
-      setIsRecording(true);
-    })();
-
-    return () => {
-      cancelled = true;
-      const rec = recordingRef.current;
-      recordingRef.current = null;
-      if (rec) {
-        void rec.stopAndUnloadAsync().catch(() => undefined);
-      }
-    };
+    void dictation.start();
+    return () => dictation.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function finish() {
+    if (busy) return;
     setBusy(true);
-    try {
-      const rec = recordingRef.current;
-      recordingRef.current = null;
-      if (!rec) throw new Error("sin_audio");
-      await rec.stopAndUnloadAsync();
-      setIsRecording(false);
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
-      const uri = rec.getURI();
-      if (!uri) throw new Error("sin_audio");
-      const text = await transcribeRecording(uri);
-      if (!text) throw new Error("stt_empty");
-      const structured = await structureTranscript(text);
-      setDraftTranscript(text);
-      setDraftStructure(structured);
-      router.replace("/review");
-    } catch {
-      setError(
-        "No se pudo transcribir. Revisa EXPO_PUBLIC_API_URL o usa Demo UCI.",
+    const text = await dictation.stopAndFlush();
+    if (!text) {
+      setLocalError(
+        dictation.error ??
+          "No se escuchó dictado. Habla más cerca o usa Demo UCI.",
       );
-    } finally {
       setBusy(false);
+      return;
     }
+    const structured = await structureTranscript(text);
+    setDraftTranscript(text);
+    setDraftStructure(structured);
+    router.replace("/review");
   }
 
   return (
-    <View className="flex-1 bg-wash px-5 pt-8">
+    <View className="flex-1 bg-wash px-5 pt-4 pb-6">
       <Text className="text-[11px] font-semibold uppercase tracking-[2px] text-cvred">
-        Grabando
+        ● Grabando {formatClock(dictation.elapsedMs)}
       </Text>
-      <Text className="mt-2 text-3xl font-bold text-ink">
+
+      <View className="mt-4">
+        <VoiceBars bars={dictation.bars} active />
+      </View>
+
+      <Text className="mt-4 text-[11px] font-semibold uppercase tracking-[2px] text-muted">
         Transcripción en vivo
       </Text>
-      <Text className="mt-3 text-sm text-muted">
-        Detectando mientras habla. El audio no se almacena: queda la
-        transcripción y los eventos.
-      </Text>
-      <View className="mt-10 items-center">
-        <View className="h-28 w-28 items-center justify-center rounded-full bg-cvred/15">
-          <View className="h-16 w-16 rounded-full bg-cvred" />
-        </View>
-        <Text className="mt-4 font-mono text-sm text-muted">
-          {isRecording ? "MIC ACTIVO" : "preparando…"}
+      <ScrollView
+        ref={scrollRef}
+        className="mt-2 flex-1 rounded-2xl bg-paper"
+        contentContainerClassName="p-4"
+        onContentSizeChange={() =>
+          scrollRef.current?.scrollToEnd({ animated: true })
+        }
+      >
+        <Text className="text-[15px] leading-6 text-ink">
+          {dictation.transcript || "Hable ahora. El texto aparece acá."}
         </Text>
+      </ScrollView>
+
+      <Text className="mt-3 text-[11px] font-semibold uppercase tracking-[2px] text-muted">
+        Detectando mientras habla
+      </Text>
+      <View className="mt-2 max-h-16">
+        <LiveChips chips={chips} />
       </View>
-      {error ? <Text className="mt-6 text-sm text-cvamber">{error}</Text> : null}
-      <View className="mt-auto mb-10">
+      <Text className="mt-2 text-xs text-muted">
+        El audio no se almacena: queda la transcripción y los eventos.
+      </Text>
+      {localError || dictation.error ? (
+        <Text className="mt-2 text-sm text-cvamber">
+          {localError ?? dictation.error}
+        </Text>
+      ) : null}
+
+      <View className="mt-4">
         <PrimaryButton
-          danger
+          success
           disabled={busy}
-          label={busy ? "Transcribiendo…" : "Terminar registro"}
+          label={busy ? "Procesando dictado…" : "Detener grabación"}
           onPress={() => void finish()}
         />
       </View>

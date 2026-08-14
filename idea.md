@@ -222,7 +222,7 @@ NO afirmar como hecho actual algo que las fuentes no demuestren.
 
 Puedes presentar lo anterior como:
 
-**hipótesis operacional que Continuidad Vital intenta resolver.**
+**hipótesis operacional que Sirena intenta resolver.**
 
 ---
 
@@ -244,7 +244,7 @@ El problema humano más profundo es:
 
 # cuando un paciente necesita continuar su atención hospitalaria, cada minuto utilizado en identificar y coordinar la capacidad adecuada puede importar.
 
-Continuidad Vital busca reducir la fricción informacional que existe entre:
+Sirena busca reducir la fricción informacional que existe entre:
 
 **lo que está ocurriendo clínicamente**
 
@@ -271,9 +271,9 @@ Sí podemos hablar de:
 
 La frase conceptual fundamental del proyecto es:
 
-# “Que el profesional atienda al paciente; que Continuidad Vital actualice la red.”
+# “Que el profesional atienda al paciente; que Sirena actualice la red.”
 
-Continuidad Vital transforma:
+Sirena transforma:
 
 **voz clínica deliberada**
 
@@ -452,7 +452,7 @@ Si propones nuevos campos, identifícalos explícitamente como:
 
 # 11. OFERTA Y DEMANDA
 
-Continuidad Vital busca capturar ambos lados del problema.
+Sirena busca capturar ambos lados del problema.
 
 ## DEMANDA
 
@@ -743,11 +743,11 @@ El producto es:
 
 Propuesta de valor preliminar:
 
-“Continuidad Vital convierte comandos de voz deliberados de profesionales de urgencia en información clínico-operacional estructurada y validada, reduciendo la distancia entre la atención del paciente y la información disponible para gestionar la capacidad de la red asistencial.”
+“Sirena convierte comandos de voz deliberados de profesionales de urgencia en información clínico-operacional estructurada y validada, reduciendo la distancia entre la atención del paciente y la información disponible para gestionar la capacidad de la red asistencial.”
 
 Otra formulación:
 
-“La información que determina dónde puede continuar la atención de un paciente nace durante la atención clínica. Continuidad Vital la estructura en el momento en que se genera.”
+“La información que determina dónde puede continuar la atención de un paciente nace durante la atención clínica. Sirena la estructura en el momento en que se genera.”
 
 Otra:
 
@@ -789,7 +789,7 @@ El profesional ya dijo la información.
 
 ¿Por qué pedir que alguien vuelva a transformarla manualmente en datos?
 
-### 6. Continuidad Vital
+### 6. Sirena
 
 Capturamos esa decisión desde la voz.
 
@@ -1031,7 +1031,7 @@ Pero para que toda la red pueda reaccionar, esa información tiene que convertir
 
 Entonces revelar:
 
-# Continuidad Vital.
+# Sirena.
 
 ---
 
@@ -1039,7 +1039,7 @@ Entonces revelar:
 
 Evalúa y mejora:
 
-“Que el médico atienda al paciente; que Continuidad Vital actualice la red.”
+“Que el médico atienda al paciente; que Sirena actualice la red.”
 
 “La red no debería enterarse después.”
 
@@ -1087,7 +1087,7 @@ Esto es importante:
 
 no estamos intentando reinventar el sistema.
 
-### Slide 4 — Continuidad Vital
+### Slide 4 — Sirena
 
 Wearable → voz → IA → información estructurada.
 

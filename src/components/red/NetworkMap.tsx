@@ -1,5 +1,6 @@
 "use client";
 
+import { SirenaLogo } from "@/components/brand/SirenaLogo";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useNetworkData } from "@/hooks/useNetworkData";
@@ -75,11 +76,14 @@ export function NetworkMap() {
     <div className="mx-auto grid w-full max-w-[1440px] gap-4 px-4 py-4 lg:grid-cols-[1fr_340px] lg:px-6">
       <section className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--paper)]">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--blue)]">
-              Gestión centralizada de casos · Región Metropolitana
-            </p>
-            <h1 className="text-lg font-semibold">Continuidad Vital · Vista de red</h1>
+          <div className="flex items-center gap-3">
+            <SirenaLogo size={36} />
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--blue)]">
+                Gestión centralizada de casos · Región Metropolitana
+              </p>
+              <h1 className="text-lg font-semibold">SIRENA · Vista de red</h1>
+            </div>
           </div>
           <div className="flex gap-1 rounded-lg bg-[var(--wash)] p-1">
             {(["uci", "uti", "basica"] as BedKind[]).map((item) => (

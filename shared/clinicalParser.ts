@@ -1,4 +1,5 @@
 import {
+  enrichStructure,
   emptyStructure,
   type ClinicalStructure,
   type EventKind,
@@ -74,6 +75,11 @@ export function parseClinicalText(text: string): ClinicalStructure {
   result.basic_bed_required = basicBed || (hospitalization && !mentionsIcu && !mentionsUti) || null;
   result.isolation_required = isolation || null;
   result.discharge_ordered = discharge && !hospitalization;
+  result.vital_risk = /riesgo vital|inestable|choque|shock|paro|critico/.test(
+    folded,
+  )
+    ? true
+    : null;
 
   for (const [pattern, label] of CONDITIONS) {
     if (pattern.test(folded)) {
@@ -94,5 +100,61 @@ export function parseClinicalText(text: string): ClinicalStructure {
   if (result.discharge_ordered) events.push("DISCHARGE_ORDERED");
   result.events = events;
   result.source = "regex";
-  return result;
+  return enrichStructure(result);
+}
+
+export type LiveChip = {
+  id: string;
+  label: string;
+  tone: "ok" | "warn";
+};
+
+export function detectLiveChips(text: string): LiveChip[] {
+  const parsed = parseClinicalText(text);
+  const chips: LiveChip[] = [];
+  if (parsed.age_years) {
+    chips.push({ id: "age", label: `${parsed.age_years} años`, tone: "ok" });
+  }
+  if (parsed.requires_hospitalization) {
+    chips.push({ id: "hosp", label: "hospitalización", tone: "ok" });
+  }
+  if (parsed.icu.certainty === "confirmed") {
+    chips.push({ id: "icu", label: "UCI", tone: "ok" });
+  } else if (
+    parsed.icu.certainty === "possible" ||
+    parsed.icu.certainty === "conditional"
+  ) {
+    chips.push({ id: "icu-p", label: "UCI posible", tone: "warn" });
+  }
+  if (parsed.uti_required) {
+    chips.push({ id: "uti", label: "UTI", tone: "ok" });
+  }
+  if (parsed.basic_bed_required) {
+    chips.push({ id: "basica", label: "cama básica", tone: "ok" });
+  }
+  if (parsed.isolation_required) {
+    chips.push({ id: "iso", label: "aislamiento", tone: "ok" });
+  }
+  if (parsed.discharge_ordered) {
+    chips.push({ id: "alta", label: "alta médica", tone: "ok" });
+  }
+  if (parsed.relevant_condition) {
+    chips.push({
+      id: "cond",
+      label: parsed.relevant_condition,
+      tone: "ok",
+    });
+  }
+  return chips;
+}
+
+export const BAR_COUNT = 22;
+
+export function barsFromEnergy(energy: number, now: number): number[] {
+  const amp = Math.min(1, Math.max(0.06, energy));
+  return Array.from({ length: BAR_COUNT }, (_, i) => {
+    const wave = 0.4 + 0.6 * Math.abs(Math.sin(now / 140 + i * 0.42));
+    const jitter = 0.2 * Math.abs(Math.sin(now / 80 + i * 1.63));
+    return Math.min(1, amp * (wave + jitter));
+  });
 }

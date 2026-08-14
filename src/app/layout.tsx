@@ -16,9 +16,10 @@ const ibmMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Continuidad Vital",
+  title: "SIRENA",
   description:
-    "Voz clínica deliberada → eventos operacionalmente estructurados para la red hospitalaria. Datos sintéticos.",
+    "De la voz clínica a la red. Eventos operacionalmente estructurados para la red hospitalaria. Datos sintéticos.",
+  icons: { icon: "/sirena-1f.svg" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

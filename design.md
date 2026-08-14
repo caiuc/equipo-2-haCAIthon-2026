@@ -1,6 +1,6 @@
-# Continuidad Vital — design system y contratos
+# SIRENA — design system y contratos
 
-SSOT de ingeniería. El pitch vive en `idea.md`. El diseño visual de referencia es `SIRENA - DISEÑO WEB, MOVIL.html` (marca: Continuidad Vital).
+SSOT de ingeniería. El pitch vive en `idea.md`. El diseño visual de referencia es `SIRENA - DISEÑO WEB, MOVIL.html` (marca: SIRENA, logo 1F).
 
 ## Marca y tokens
 
@@ -33,7 +33,7 @@ Definidos en `src/app/globals.css`.
 
 Redirects: `/reporte` `/urgencias` `/intake` → `/registro`. `/analisis` `/mando` → `/hospital`.
 
-Mobile Expo (`mobile/`): solo nivel 1 (wearable analog).
+Mobile Expo SDK 54 + Expo Go (`mobile/`): solo nivel 1 (wearable analog).
 
 ## Pipeline de voz
 

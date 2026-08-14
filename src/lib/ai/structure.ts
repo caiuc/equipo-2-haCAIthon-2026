@@ -1,11 +1,12 @@
 import {
+  enrichStructure,
   type ClinicalStructure,
   type EventKind,
   type IcuCertainty,
 } from "@shared/clinical";
 import { parseClinicalText } from "@shared/clinicalParser";
 
-const SYSTEM_PROMPT = `Eres un extractor clínico-operacional para Continuidad Vital (Chile).
+const SYSTEM_PROMPT = `Eres un extractor clínico-operacional para SIRENA (Chile).
 Devuelves SOLO JSON válido, sin markdown.
 No diagnosticas. No tomas decisiones. Distingues certeza:
 - confirmed: el profesional indicó UCI de forma afirmativa
@@ -13,6 +14,7 @@ No diagnosticas. No tomas decisiones. Distingues certeza:
 - conditional: "si empeora", "podría"
 - not_required: no se menciona o se niega
 UCI posible o condicional NUNCA debe convertirse en ICU_CONFIRMED.
+Si un dato no está en el audio, usa null. No alucines RUT, nombre propio ni número de camilla.
 Campos:
 {
   "patient_code_hint": string|null,
@@ -24,11 +26,17 @@ Campos:
   "basic_bed_required": boolean|null,
   "isolation_required": boolean|null,
   "relevant_condition": string|null,
+  "clinical_summary": string|null,
+  "analysis": string|null,
+  "vital_risk": boolean|null,
   "discharge_ordered": boolean,
   "events": string[],
   "confidence": "pending_verification",
   "transcript": string
 }
+clinical_summary: motivo de ingreso en una frase, solo con lo dicho.
+analysis: 1 a 3 frases de lo que entendiste del dictado, sin diagnóstico nuevo.
+vital_risk: true solo si el audio implica riesgo vital inminente; si no se menciona, null.
 events solo puede incluir: REQUIRES_HOSPITALIZATION, POSSIBLE_ICU_REQUIREMENT, ICU_CONFIRMED, UTI_REQUIRED, BASIC_BED_REQUIRED, ISOLATION_REQUIRED, DISCHARGE_ORDERED, PATIENT_DISCHARGED, BED_CLEANING, BED_AVAILABLE, TRANSFER_SUGGESTED.
 confidence siempre "pending_verification".`;
 
@@ -105,6 +113,18 @@ function coerce(raw: unknown, transcript: string): ClinicalStructure {
       typeof row.relevant_condition === "string"
         ? row.relevant_condition
         : fallback.relevant_condition,
+    clinical_summary:
+      typeof row.clinical_summary === "string" && row.clinical_summary.trim()
+        ? row.clinical_summary.trim()
+        : fallback.clinical_summary,
+    analysis:
+      typeof row.analysis === "string" && row.analysis.trim()
+        ? row.analysis.trim()
+        : null,
+    vital_risk:
+      typeof row.vital_risk === "boolean" ? row.vital_risk : fallback.vital_risk,
+    criticality: fallback.criticality,
+    bed_actions: fallback.bed_actions,
     discharge_ordered:
       typeof row.discharge_ordered === "boolean"
         ? row.discharge_ordered
@@ -157,7 +177,7 @@ export async function structureTranscript(
     const content = data.choices?.[0]?.message?.content;
     if (!content) return fallback;
     const parsed = JSON.parse(content) as unknown;
-    return guardUncertainty(coerce(parsed, trimmed));
+    return enrichStructure(guardUncertainty(coerce(parsed, trimmed)));
   } catch {
     return fallback;
   }

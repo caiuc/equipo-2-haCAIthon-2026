@@ -24,19 +24,21 @@ export function PrimaryButton({
   label,
   onPress,
   danger,
+  success,
   disabled,
 }: {
   label: string;
   onPress: () => void;
   danger?: boolean;
+  success?: boolean;
   disabled?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      className={`items-center rounded-xl px-4 py-3 ${
-        danger ? "bg-cvred" : "bg-cvblue"
+      className={`items-center rounded-2xl px-4 py-3.5 ${
+        danger ? "bg-cvred" : success ? "bg-cvgreen" : "bg-cvblue"
       } ${disabled ? "opacity-40" : ""}`}
     >
       <Text className="font-semibold text-white">{label}</Text>

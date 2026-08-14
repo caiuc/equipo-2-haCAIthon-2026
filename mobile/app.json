@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Continuidad Vital",
+    "name": "SIRENA",
     "slug": "continuidad-vital",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,7 +11,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Continuidad Vital graba audio solo cuando activas el micrófono para registrar un paciente.",
+        "NSMicrophoneUsageDescription": "SIRENA usa el micrófono solo cuando activas un registro de paciente.",
+        "NSSpeechRecognitionUsageDescription": "SIRENA convierte tu dictado en texto para extraer eventos clínicos. El audio no se almacena.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true,
           "NSAllowsArbitraryLoads": true
@@ -39,7 +40,7 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Continuidad Vital graba audio solo cuando activas el micrófono para registrar un paciente."
+          "microphonePermission": "SIRENA graba audio solo cuando activas el micrófono para registrar un paciente."
         }
       ]
     ]

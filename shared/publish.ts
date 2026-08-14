@@ -1,6 +1,6 @@
 import type { ClinicalStructure } from "./clinical";
-import { demandIncrements } from "./clinical";
-import type { Database } from "./database.types";
+import { demandIncrements, enrichStructure } from "./clinical";
+import type { Database, Json } from "./database.types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type PublishInput = {
@@ -19,7 +19,8 @@ export async function publishClinicalConfirmation(
   supabase: SupabaseClient<Database>,
   input: PublishInput,
 ): Promise<PublishResult> {
-  const { structure, hospitalId, professionalId } = input;
+  const structure = enrichStructure(input.structure);
+  const { hospitalId, professionalId } = input;
   const now = new Date().toISOString();
 
   let patientId: string | null = null;
@@ -62,20 +63,38 @@ export async function publishClinicalConfirmation(
     patientId = created.data.id;
   }
 
+  const voiceBase = {
+    hospital_id: hospitalId,
+    professional_id: professionalId,
+    patient_id: patientId,
+    transcript: structure.transcript,
+    stt_engine:
+      structure.source === "deepseek" ? "groq-whisper+deepseek" : "regex",
+    status: "validated" as const,
+  };
+
   const voice = await supabase
     .from("voice_records")
-    .insert({
-      hospital_id: hospitalId,
-      professional_id: professionalId,
-      patient_id: patientId,
-      transcript: structure.transcript,
-      stt_engine:
-        structure.source === "deepseek" ? "groq-whisper+deepseek" : "regex",
-      status: "validated",
-    })
+    .insert(voiceBase)
     .select("id")
     .single();
   if (voice.error) throw new Error(voice.error.message);
+
+  void supabase
+    .from("voice_records")
+    .update({ structure: structure as unknown as Json })
+    .eq("id", voice.data.id);
+
+  const snapshot = {
+    form: structure,
+    source: structure.source,
+    isolation_required: structure.isolation_required ?? null,
+    criticality: structure.criticality,
+    bed_actions: structure.bed_actions,
+    analysis: structure.analysis,
+    clinical_summary: structure.clinical_summary,
+    vital_risk: structure.vital_risk,
+  } as unknown as Json;
 
   if (structure.events.length) {
     const rows = structure.events.map((event_kind) => ({
@@ -88,10 +107,7 @@ export async function publishClinicalConfirmation(
       confidence: structure.icu.confidence,
       confirmation: "confirmed" as const,
       confirmed_at: now,
-      payload: {
-        source: structure.source,
-        isolation_required: structure.isolation_required ?? null,
-      },
+      payload: snapshot,
     }));
     const inserted = await supabase.from("clinical_events").insert(rows);
     if (inserted.error) throw new Error(inserted.error.message);

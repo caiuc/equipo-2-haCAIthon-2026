@@ -1,4 +1,4 @@
-# Continuidad Vital — mobile
+# SIRENA — mobile
 
 ```bash
 cd mobile

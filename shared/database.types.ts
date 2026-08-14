@@ -152,6 +152,7 @@ export interface Database {
           duration_seconds: number | null;
           stt_engine: string;
           status: VoiceStatus;
+          structure?: Json | null;
           created_at: string;
         };
         Insert: {
@@ -163,6 +164,7 @@ export interface Database {
           duration_seconds?: number | null;
           stt_engine?: string;
           status?: VoiceStatus;
+          structure?: Json;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["voice_records"]["Insert"]>;

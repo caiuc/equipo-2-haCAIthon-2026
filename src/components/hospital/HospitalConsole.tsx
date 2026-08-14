@@ -1,9 +1,12 @@
 "use client";
 
+import { SirenaLogo } from "@/components/brand/SirenaLogo";
+import { RecordDetailModal } from "@/components/records/RecordDetail";
 import { Badge } from "@/components/ui/Badge";
 import { useNetworkData } from "@/hooks/useNetworkData";
 import { BED_LABEL, EVENT_LABEL, type BedKind } from "@shared/clinical";
 import { hospitalBalance } from "@shared/clinical";
+import { buildRecordDetail } from "@shared/recordDetail";
 import { useMemo, useState } from "react";
 
 const TABS = [
@@ -24,8 +27,15 @@ export function HospitalConsole() {
     error,
   } = useNetworkData();
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("capacidad");
+  const [openRecordId, setOpenRecordId] = useState<string | null>(null);
   const pipeline = pipelines.find((item) => item.hospital_id === hospital?.id);
   const pending = events.filter((item) => item.confirmation === "proposed").length;
+  const openDetail = useMemo(() => {
+    if (!openRecordId) return null;
+    const record = voices.find((item) => item.id === openRecordId);
+    if (!record) return null;
+    return buildRecordDetail(record, events);
+  }, [openRecordId, voices, events]);
 
   const byKind = useMemo(() => {
     const map = new Map(hospitalCapacities.map((row) => [row.bed_kind, row]));
@@ -43,13 +53,16 @@ export function HospitalConsole() {
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-4 py-6 lg:px-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--blue)]">
-            Continuidad Vital · Consola {hospital?.name ?? "Hospital A"}
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-            Urgencia adultos · datos sintéticos
-          </h1>
+        <div className="flex items-center gap-3">
+          <SirenaLogo size={36} />
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--blue)]">
+              SIRENA · Consola {hospital?.name ?? "Hospital A"}
+            </p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+              Urgencia adultos · datos sintéticos
+            </h1>
+          </div>
         </div>
         {pending ? (
           <Badge tone="warn">{pending} eventos por validar</Badge>
@@ -159,7 +172,19 @@ export function HospitalConsole() {
               {events
                 .filter((item) => item.hospital_id === hospital?.id)
                 .map((event) => (
-                  <tr key={event.id} className="border-t border-[var(--line)]">
+                  <tr
+                    key={event.id}
+                    className={`border-t border-[var(--line)] ${
+                      event.voice_record_id
+                        ? "cursor-pointer hover:bg-[var(--wash)]"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      if (event.voice_record_id) {
+                        setOpenRecordId(event.voice_record_id);
+                      }
+                    }}
+                  >
                     <td className="px-4 py-3 font-mono text-xs">
                       {event.patient_id?.slice(0, 8) ?? "—"}
                     </td>
@@ -195,9 +220,11 @@ export function HospitalConsole() {
           {voices
             .filter((item) => item.hospital_id === hospital?.id)
             .map((voice) => (
-              <article
+              <button
                 key={voice.id}
-                className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-4"
+                type="button"
+                onClick={() => setOpenRecordId(voice.id)}
+                className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-4 text-left"
               >
                 <div className="flex items-center justify-between gap-2">
                   <Badge tone={voice.status === "validated" ? "ok" : "warn"}>
@@ -208,9 +235,16 @@ export function HospitalConsole() {
                   </span>
                 </div>
                 <p className="mt-3 text-sm">{voice.transcript}</p>
-              </article>
+              </button>
             ))}
         </section>
+      ) : null}
+
+      {openDetail ? (
+        <RecordDetailModal
+          detail={openDetail}
+          onClose={() => setOpenRecordId(null)}
+        />
       ) : null}
     </div>
   );

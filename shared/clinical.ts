@@ -93,6 +93,29 @@ export function emptyStructure(transcript: string): ClinicalStructure {
   };
 }
 
+export function withDerivedEvents(
+  structure: ClinicalStructure,
+): ClinicalStructure {
+  const events: EventKind[] = [];
+  if (structure.requires_hospitalization) {
+    events.push("REQUIRES_HOSPITALIZATION");
+  }
+  if (
+    structure.icu.certainty === "possible" ||
+    structure.icu.certainty === "conditional"
+  ) {
+    events.push("POSSIBLE_ICU_REQUIREMENT");
+  }
+  if (structure.icu.certainty === "confirmed") {
+    events.push("ICU_CONFIRMED");
+  }
+  if (structure.uti_required) events.push("UTI_REQUIRED");
+  if (structure.basic_bed_required) events.push("BASIC_BED_REQUIRED");
+  if (structure.isolation_required) events.push("ISOLATION_REQUIRED");
+  if (structure.discharge_ordered) events.push("DISCHARGE_ORDERED");
+  return { ...structure, events };
+}
+
 export function countsAsIcuDemand(certainty: IcuCertainty): boolean {
   return certainty === "confirmed";
 }

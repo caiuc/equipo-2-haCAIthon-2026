@@ -1,6 +1,7 @@
 import { Providers } from "@/components/Providers";
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import type { ReactNode } from "react";
 import "./globals.css";
 
 const ibmSans = IBM_Plex_Sans({
@@ -16,12 +17,12 @@ const ibmMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Continuidad Vital",
+  title: "SIRENA · Continuidad Vital",
   description:
-    "Voz clínica deliberada → eventos operacionalmente estructurados para la red hospitalaria. Datos sintéticos.",
+    "Registro clínico por voz y continuidad operacional para la red hospitalaria. Datos sintéticos.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="es"

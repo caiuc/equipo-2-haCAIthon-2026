@@ -7,6 +7,9 @@ export type PublishInput = {
   hospitalId: string;
   professionalId: string;
   structure: ClinicalStructure;
+  sttEngine: string;
+  durationSeconds: number;
+  edited: boolean;
 };
 
 export type PublishResult = {
@@ -19,7 +22,14 @@ export async function publishClinicalConfirmation(
   supabase: SupabaseClient<Database>,
   input: PublishInput,
 ): Promise<PublishResult> {
-  const { structure, hospitalId, professionalId } = input;
+  const {
+    structure,
+    hospitalId,
+    professionalId,
+    sttEngine,
+    durationSeconds,
+    edited,
+  } = input;
   const now = new Date().toISOString();
 
   let patientId: string | null = null;
@@ -69,9 +79,9 @@ export async function publishClinicalConfirmation(
       professional_id: professionalId,
       patient_id: patientId,
       transcript: structure.transcript,
-      stt_engine:
-        structure.source === "deepseek" ? "groq-whisper+deepseek" : "regex",
-      status: "validated",
+      stt_engine: sttEngine,
+      duration_seconds: durationSeconds,
+      status: edited ? "edited" : "validated",
     })
     .select("id")
     .single();
@@ -91,6 +101,7 @@ export async function publishClinicalConfirmation(
       payload: {
         source: structure.source,
         isolation_required: structure.isolation_required ?? null,
+        edited,
       },
     }));
     const inserted = await supabase.from("clinical_events").insert(rows);

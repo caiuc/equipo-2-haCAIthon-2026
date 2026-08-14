@@ -41,6 +41,8 @@ interface RawState {
   generatorsAvailable: number;
   scenarioActive: boolean;
   audit: AuditEvent[];
+  focusFacilityId: string | null;
+  focusAt: number;
 }
 
 interface MockStore extends RawState {
@@ -48,6 +50,8 @@ interface MockStore extends RawState {
   theme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
   approveAssignment: (id: string) => void;
+  rejectAssignment: (id: string) => void;
+  focusFacility: (facilityId: string | null) => void;
   simulateCentroNorteWaterFailure: () => void;
   resetDemo: () => void;
   confirmFacilityUpdate: (
@@ -95,6 +99,8 @@ function createFreshState(): RawState {
     incidents: createInitialIncidents(),
     generatorsAvailable: INITIAL_GENERATORS,
     scenarioActive: false,
+    focusFacilityId: null,
+    focusAt: 0,
     audit: [
       stamp(
         "UPDATE",
@@ -114,7 +120,7 @@ function findFacilityName(facilities: FacilityStatus[], hint: string | null) {
 
 export function MockDataProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<RawState>(() => createFreshState());
-  const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [theme, setTheme] = useState<ThemeMode>("light");
 
   const alerts = useMemo(
     () => computeAlerts(state.patients, state.facilities, state.assignments),
@@ -169,6 +175,8 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         patients,
         assignments,
         generatorsAvailable,
+        focusFacilityId: assignment.facilityId ?? current.focusFacilityId,
+        focusAt: assignment.facilityId ? Date.now() : current.focusAt,
         audit: [
           stamp(
             "APPROVAL",
@@ -178,6 +186,45 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         ],
       });
     });
+  }, []);
+
+  const rejectAssignment = useCallback((id: string) => {
+    setState((current) => {
+      const assignment = current.assignments.find((item) => item.id === id);
+      if (!assignment || assignment.status !== "PROPOSED") return current;
+
+      const patients = current.patients.map((patient) =>
+        patient.id === assignment.patientNeedId
+          ? { ...patient, caseStatus: "OPEN" as const }
+          : patient,
+      );
+      const assignments = current.assignments.map((item) =>
+        item.id === id ? { ...item, status: "REJECTED" as const } : item,
+      );
+      const patient = patients.find((item) => item.id === assignment.patientNeedId);
+      const code = patient?.anonymousCode ?? assignment.patientNeedId;
+
+      return withEngine({
+        ...current,
+        patients,
+        assignments,
+        audit: [
+          stamp(
+            "REJECTION",
+            `Acción ${assignment.actionType} rechazada para ${code}. La cama no se reserva.`,
+          ),
+          ...current.audit,
+        ],
+      });
+    });
+  }, []);
+
+  const focusFacility = useCallback((facilityId: string | null) => {
+    setState((current) => ({
+      ...current,
+      focusFacilityId: facilityId,
+      focusAt: Date.now(),
+    }));
   }, []);
 
   const simulateCentroNorteWaterFailure = useCallback(() => {
@@ -193,7 +240,6 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
               electricity: "BACKUP" as const,
               backupHours: 4,
               accessStatus: "RESTRICTED" as const,
-              availableCapacity: 0,
               updatedAt: now,
               verificationStatus: "VERIFIED" as const,
             }
@@ -363,11 +409,6 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
           update.power_status === "NONE"
             ? "PARTIAL"
             : facility.operationalStatus,
-        availableCapacity:
-          update.water_status === "unavailable" &&
-          facility.facilityId === FACILITY_IDS.norte
-            ? 0
-            : facility.availableCapacity,
       });
 
       return {
@@ -385,6 +426,8 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
       theme,
       setTheme,
       approveAssignment,
+      rejectAssignment,
+      focusFacility,
       simulateCentroNorteWaterFailure,
       resetDemo,
       confirmFacilityUpdate,
@@ -396,6 +439,8 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
       alerts,
       theme,
       approveAssignment,
+      rejectAssignment,
+      focusFacility,
       simulateCentroNorteWaterFailure,
       resetDemo,
       confirmFacilityUpdate,

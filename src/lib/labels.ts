@@ -63,6 +63,7 @@ export const assignmentStatusLabel: Record<AssignmentStatus, string> = {
   APPROVED: "Aprobada",
   IN_PROGRESS: "En curso",
   COMPLETED: "Completada",
+  REJECTED: "Rechazada",
 };
 
 export const incidentLabel: Record<IncidentMarker["type"], string> = {

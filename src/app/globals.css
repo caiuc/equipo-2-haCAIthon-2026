@@ -1,6 +1,21 @@
 @import "tailwindcss";
 
 :root,
+html.light {
+  --bg: #f4f7fb;
+  --panel: #ffffff;
+  --text: #102033;
+  --muted: #5b6b82;
+  --line: rgba(16, 32, 51, 0.12);
+  --teal: #0f766e;
+  --ok: #047857;
+  --warn: #b45309;
+  --bad: #b91c1c;
+  --input: #f8fafc;
+  --background: var(--bg);
+  --foreground: var(--text);
+}
+
 html.dark {
   --bg: #070b12;
   --panel: #101826;
@@ -8,17 +23,10 @@ html.dark {
   --muted: #8b9bb4;
   --line: rgba(255, 255, 255, 0.1);
   --teal: #2ee6d6;
-  --background: var(--bg);
-  --foreground: var(--text);
-}
-
-html.light {
-  --bg: #eef2f7;
-  --panel: #ffffff;
-  --text: #102033;
-  --muted: #5b6b82;
-  --line: rgba(16, 32, 51, 0.12);
-  --teal: #0f766e;
+  --ok: #3dd68c;
+  --warn: #f5b942;
+  --bad: #ff5c5c;
+  --input: #0b1220;
   --background: var(--bg);
   --foreground: var(--text);
 }
@@ -38,11 +46,34 @@ body {
 
 html.light body {
   background:
-    radial-gradient(circle at top, #ffffff, transparent 40%),
+    radial-gradient(circle at top, #ffffff, transparent 42%),
     var(--bg);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #31415c transparent;
+  scrollbar-color: #b7c4d6 transparent;
+}
+
+.mapboxgl-popup-content {
+  background: var(--panel) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--line);
+  border-radius: 12px !important;
+  padding: 12px !important;
+  box-shadow: 0 16px 48px rgba(16, 32, 51, 0.12);
+}
+
+.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+  border-bottom-color: var(--panel);
+}
+
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+  border-top-color: var(--panel);
+}
+
+.mapboxgl-popup-close-button {
+  color: var(--muted);
+  font-size: 18px;
+  padding: 4px 8px;
 }

@@ -148,7 +148,7 @@ export function VoiceIntake() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <section className="rounded-xl border border-white/10 bg-[var(--panel)] p-4">
+      <section className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-4">
         <h2 className="text-sm font-semibold">Captura de voz (Whisper + fallback)</h2>
         <p className="mt-1 text-xs text-[var(--muted)]">
           La transcripción no cambia el tablero sola: un coordinador debe
@@ -183,12 +183,12 @@ export function VoiceIntake() {
           value={transcript}
           onChange={(event) => setTranscript(event.target.value)}
           rows={5}
-          className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 p-3 text-sm outline-none ring-teal-400/40 focus:ring-2"
+          className="mt-1 w-full rounded-lg border border-[var(--line)] bg-[var(--input)] p-3 text-sm outline-none ring-teal-400/40 focus:ring-2"
           placeholder="Ej. Quedan cuatro horas de generador, no tenemos agua en el centro norte y el acceso está cortado"
         />
       </section>
 
-      <section className="rounded-xl border border-white/10 bg-[var(--panel)] p-4">
+      <section className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-4">
         <div className="flex gap-2">
           <Button
             variant={channel === "facility" ? "primary" : "quiet"}
@@ -208,7 +208,7 @@ export function VoiceIntake() {
           <label className="mt-4 block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             Destino
             <select
-              className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 p-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-[var(--line)] bg-[var(--input)] p-2 text-sm"
               value={facilityId}
               onChange={(event) => setFacilityId(event.target.value)}
             >
@@ -223,7 +223,7 @@ export function VoiceIntake() {
           <label className="mt-4 block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             Caso
             <select
-              className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 p-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-[var(--line)] bg-[var(--input)] p-2 text-sm"
               value={patientId}
               onChange={(event) => setPatientId(event.target.value)}
             >
@@ -243,7 +243,7 @@ export function VoiceIntake() {
             </p>
             {parsed ? <Badge tone="warn">{parsed.confidence}</Badge> : null}
           </div>
-          <pre className="max-h-56 overflow-auto rounded-lg bg-black/40 p-3 font-mono text-[11px] leading-relaxed text-teal-100">
+          <pre className="max-h-56 overflow-auto rounded-lg bg-[var(--input)] p-3 font-mono text-[11px] leading-relaxed text-teal-900">
             {parsed
               ? JSON.stringify(
                   {
@@ -268,7 +268,7 @@ export function VoiceIntake() {
           Verificar y enviar al tablero
         </Button>
         {feedback ? (
-          <p className="mt-3 text-sm text-emerald-300">{feedback}</p>
+          <p className="mt-3 text-sm text-emerald-700">{feedback}</p>
         ) : (
           <p className="mt-3 text-xs text-[var(--muted)]">
             Sin confirmación humana no se modifica el estado operacional.

@@ -3,12 +3,12 @@ import type { ReactNode } from "react";
 type Tone = "ok" | "warn" | "bad" | "info" | "neutral" | "critical";
 
 const tones: Record<Tone, string> = {
-  ok: "bg-emerald-400/15 text-emerald-300 border-emerald-400/30",
-  warn: "bg-amber-400/15 text-amber-300 border-amber-400/30",
-  bad: "bg-red-500/15 text-red-300 border-red-400/30",
-  info: "bg-teal-400/15 text-teal-200 border-teal-400/30",
-  neutral: "bg-white/8 text-slate-300 border-white/12",
-  critical: "bg-red-500/25 text-red-100 border-red-400/50",
+  ok: "bg-emerald-50 text-emerald-800 border-emerald-200",
+  warn: "bg-amber-50 text-amber-800 border-amber-200",
+  bad: "bg-red-50 text-red-800 border-red-200",
+  info: "bg-teal-50 text-teal-800 border-teal-200",
+  neutral: "bg-slate-50 text-slate-700 border-slate-200",
+  critical: "bg-red-100 text-red-900 border-red-300",
 };
 
 export function Badge({
@@ -36,9 +36,10 @@ export function operationalTone(status: "OPEN" | "PARTIAL" | "CLOSED") {
 }
 
 export function assignmentTone(
-  status: "PROPOSED" | "APPROVED" | "IN_PROGRESS" | "COMPLETED",
+  status: "PROPOSED" | "APPROVED" | "IN_PROGRESS" | "COMPLETED" | "REJECTED",
 ) {
   if (status === "PROPOSED") return "warn" as const;
+  if (status === "REJECTED") return "bad" as const;
   if (status === "APPROVED" || status === "IN_PROGRESS") return "info" as const;
   return "ok" as const;
 }

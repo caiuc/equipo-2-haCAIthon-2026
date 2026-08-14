@@ -50,7 +50,7 @@ function MetricCard({
   }, [value]);
 
   return (
-    <article className="rounded-xl border border-white/10 bg-[var(--panel)] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+    <article className="rounded-xl border border-[var(--line)] bg-[var(--panel)] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
         {label}
       </p>

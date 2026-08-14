@@ -12,10 +12,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[color-mix(in_oklab,var(--bg)_88%,black)] backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-4 px-4 py-3 lg:px-6">
+      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[color-mix(in_oklab,var(--panel)_90%,transparent)] backdrop-blur">
+        <div className="mx-auto flex w-full max-w-[1680px] items-center justify-between gap-4 px-4 py-3 lg:px-6">
           <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-400 font-mono text-sm font-black text-slate-950">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-700 font-mono text-sm font-black text-white">
               CV
             </span>
             <span>
@@ -28,11 +28,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           </Link>
           <nav className="flex items-center gap-1 text-sm">
-            <NavLink href="/" active={pathname === "/"}>
-              Centro de mando
+            <NavLink href="/analisis" active={pathname.startsWith("/analisis")}>
+              Análisis
             </NavLink>
-            <NavLink href="/intake" active={pathname.startsWith("/intake")}>
-              Ingreso
+            <NavLink href="/reporte" active={pathname.startsWith("/reporte")}>
+              Reporte
             </NavLink>
           </nav>
           <Button
@@ -40,12 +40,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             className="text-xs"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
-            {theme === "dark" ? "Modo claro" : "Modo oscuro"}
+            {theme === "light" ? "Modo oscuro" : "Modo claro"}
           </Button>
         </div>
       </header>
       <main className="flex-1">{children}</main>
-      <footer className="border-t border-white/10 px-4 py-3 text-center text-[11px] text-[var(--muted)]">
+      <footer className="border-t border-[var(--line)] px-4 py-3 text-center text-[11px] text-[var(--muted)]">
         MVP de hackathon · datos ficticios · no conecta registros clínicos, SENAPRED ni MINSAL
       </footer>
     </div>
@@ -66,8 +66,8 @@ function NavLink({
       href={href}
       className={`rounded-lg px-3 py-1.5 font-medium ${
         active
-          ? "bg-[color-mix(in_oklab,var(--text)_12%,transparent)] text-[var(--text)]"
-          : "text-[var(--muted)] hover:bg-[color-mix(in_oklab,var(--text)_6%,transparent)] hover:text-[var(--text)]"
+          ? "bg-[color-mix(in_oklab,var(--text)_8%,transparent)] text-[var(--text)]"
+          : "text-[var(--muted)] hover:bg-[color-mix(in_oklab,var(--text)_5%,transparent)] hover:text-[var(--text)]"
       }`}
     >
       {children}

@@ -26,6 +26,7 @@ export interface FacilityStatus {
   facilityId: string;
   name: string;
   operationalStatus: OperationalStatus;
+  totalCapacity: number;
   availableCapacity: number;
   electricity: ElectricityStatus;
   backupHours: number | null;
@@ -41,7 +42,8 @@ export type AssignmentStatus =
   | "PROPOSED"
   | "APPROVED"
   | "IN_PROGRESS"
-  | "COMPLETED";
+  | "COMPLETED"
+  | "REJECTED";
 
 export interface Assignment {
   id: string;
@@ -75,6 +77,7 @@ export type AuditKind =
   | "INTAKE"
   | "SIMULATION"
   | "APPROVAL"
+  | "REJECTION"
   | "ALERT"
   | "UPDATE"
   | "RESET";

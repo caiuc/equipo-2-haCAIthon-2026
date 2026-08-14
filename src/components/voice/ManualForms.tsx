@@ -27,7 +27,7 @@ function FacilityForm() {
 
   return (
     <form
-      className="rounded-xl border border-white/10 bg-[var(--panel)] p-4"
+      className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-4"
       onSubmit={(event) => {
         event.preventDefault();
         confirmFacilityUpdate(facilityId, {
@@ -36,7 +36,6 @@ function FacilityForm() {
           backupHours: Number(backupHours),
           waterAvailable,
           accessStatus,
-          availableCapacity: waterAvailable ? undefined : 0,
         });
         setDone(true);
       }}
@@ -115,7 +114,7 @@ function FacilityForm() {
         Verificar y actualizar establecimiento
       </Button>
       {done ? (
-        <p className="mt-2 text-sm text-emerald-300">
+        <p className="mt-2 text-sm text-emerald-700">
           Estado operacional actualizado. Revisa la cola de acciones.
         </p>
       ) : null}
@@ -133,7 +132,7 @@ function PatientForm() {
 
   return (
     <form
-      className="rounded-xl border border-white/10 bg-[var(--panel)] p-4"
+      className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-4"
       onSubmit={(event) => {
         event.preventDefault();
         confirmPatientUpdate(patientId, {
@@ -198,7 +197,7 @@ function PatientForm() {
         Verificar y actualizar caso
       </Button>
       {done ? (
-        <p className="mt-2 text-sm text-emerald-300">Caso actualizado en el tablero.</p>
+        <p className="mt-2 text-sm text-emerald-700">Caso actualizado en el tablero.</p>
       ) : null}
     </form>
   );
@@ -214,7 +213,7 @@ function Field({
   return (
     <label className="mt-3 block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
       {label}
-      <div className="mt-1 text-sm font-normal text-[var(--text)] [&_input]:w-full [&_select]:w-full [&_input]:rounded-lg [&_select]:rounded-lg [&_input]:border [&_select]:border [&_input]:border-white/10 [&_select]:border-white/10 [&_input]:bg-black/30 [&_select]:bg-black/30 [&_input]:p-2 [&_select]:p-2">
+      <div className="mt-1 text-sm font-normal text-[var(--text)] [&_input]:w-full [&_select]:w-full [&_input]:rounded-lg [&_select]:rounded-lg [&_input]:border [&_select]:border [&_input]:border-[var(--line)] [&_select]:border-[var(--line)] [&_input]:bg-[var(--input)] [&_select]:bg-[var(--input)] [&_input]:p-2 [&_select]:p-2">
         {children}
       </div>
     </label>

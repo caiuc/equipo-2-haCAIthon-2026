@@ -326,6 +326,7 @@ export function buildActionQueue(
     IN_PROGRESS: 1,
     APPROVED: 2,
     COMPLETED: 3,
+    REJECTED: 4,
   };
 
   return assignments

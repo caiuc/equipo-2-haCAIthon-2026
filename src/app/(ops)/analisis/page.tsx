@@ -1,5 +1,5 @@
 import { CommandCenter } from "@/components/dashboard/CommandCenter";
 
-export default function Home() {
+export default function AnalisisPage() {
   return <CommandCenter />;
 }

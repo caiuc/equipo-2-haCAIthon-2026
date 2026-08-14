@@ -61,7 +61,7 @@ export function AlertList() {
 
   if (visible.length === 0) {
     return (
-      <p className="rounded-lg border border-white/10 px-3 py-4 text-sm text-[var(--muted)]">
+      <p className="rounded-lg border border-[var(--line)] px-3 py-4 text-sm text-[var(--muted)]">
         Sin alertas operacionales abiertas.
       </p>
     );

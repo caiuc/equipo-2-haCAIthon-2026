@@ -6,11 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
     "animejs": "^3.2.2",
+    "lucide-react": "^0.468.0",
     "mapbox-gl": "^3.28.1",
     "next": "16.3.1",
     "react": "19.2.8",
@@ -19,6 +21,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/react": "^16.1.0",
     "@types/animejs": "^3.1.13",
     "@types/mapbox-gl": "^3.4.1",
     "@types/node": "^20",
@@ -26,7 +29,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
+    "jsdom": "^25.0.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.8"
   }
 }

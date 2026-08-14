@@ -7,6 +7,9 @@ export type PublishInput = {
   hospitalId: string;
   professionalId: string;
   structure: ClinicalStructure;
+  sttEngine?: string;
+  durationSeconds?: number;
+  edited?: boolean;
 };
 
 export type PublishResult = {
@@ -21,6 +24,9 @@ export async function publishClinicalConfirmation(
 ): Promise<PublishResult> {
   const structure = enrichStructure(input.structure);
   const { hospitalId, professionalId } = input;
+  const sttEngine = input.sttEngine;
+  const durationSeconds = input.durationSeconds;
+  const edited = Boolean(input.edited);
   const now = new Date().toISOString();
 
   let patientId: string | null = null;
@@ -63,19 +69,19 @@ export async function publishClinicalConfirmation(
     patientId = created.data.id;
   }
 
-  const voiceBase = {
-    hospital_id: hospitalId,
-    professional_id: professionalId,
-    patient_id: patientId,
-    transcript: structure.transcript,
-    stt_engine:
-      structure.source === "deepseek" ? "groq-whisper+deepseek" : "regex",
-    status: "validated" as const,
-  };
-
   const voice = await supabase
     .from("voice_records")
-    .insert(voiceBase)
+    .insert({
+      hospital_id: hospitalId,
+      professional_id: professionalId,
+      patient_id: patientId,
+      transcript: structure.transcript,
+      stt_engine:
+        sttEngine ||
+        (structure.source === "deepseek" ? "groq-whisper+deepseek" : "regex"),
+      duration_seconds: durationSeconds ?? null,
+      status: edited ? "edited" : "validated",
+    })
     .select("id")
     .single();
   if (voice.error) throw new Error(voice.error.message);
@@ -94,6 +100,7 @@ export async function publishClinicalConfirmation(
     analysis: structure.analysis,
     clinical_summary: structure.clinical_summary,
     vital_risk: structure.vital_risk,
+    edited,
   } as unknown as Json;
 
   if (structure.events.length) {

@@ -1,49 +1,43 @@
-import type { SVGProps } from "react";
+import { Activity } from "lucide-react";
+
+const sizes = {
+  sm: {
+    frame: "h-9 w-9 rounded-[11px]",
+    pulse: "h-5 w-5",
+    block: "right-[6px] h-2.5 w-2.5 rounded-[3px]",
+  },
+  md: {
+    frame: "h-11 w-11 rounded-[14px]",
+    pulse: "h-6 w-6",
+    block: "right-[7px] h-3 w-3 rounded-[3px]",
+  },
+  lg: {
+    frame: "h-16 w-16 rounded-[20px]",
+    pulse: "h-9 w-9",
+    block: "right-[10px] h-4 w-4 rounded-[4px]",
+  },
+} as const;
 
 export function SirenaLogo({
-  size = 32,
+  size = "md",
   className = "",
-  ...props
-}: SVGProps<SVGSVGElement> & { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 150 150"
-      fill="none"
-      aria-hidden
-      className={className}
-      {...props}
-    >
-      <rect x="5" y="5" width="140" height="140" rx="34" fill="#1D4ED8" />
-      <path
-        d="M28 75h20l12-28 14 42 10-22 8 8h6"
-        stroke="#fff"
-        strokeWidth="9"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <rect x="108" y="64" width="22" height="22" rx="3" fill="#6EE7B7" />
-    </svg>
-  );
-}
-
-export function SirenaMark({
-  size = 32,
-  subtitle = "De la voz clínica a la red",
 }: {
-  size?: number;
-  subtitle?: string;
+  size?: keyof typeof sizes;
+  className?: string;
 }) {
+  const styles = sizes[size];
   return (
-    <span className="flex items-center gap-2.5">
-      <SirenaLogo size={size} />
-      <span>
-        <span className="block text-sm font-semibold tracking-[0.18em]">SIRENA</span>
-        {subtitle ? (
-          <span className="block text-[11px] text-[var(--muted)]">{subtitle}</span>
-        ) : null}
-      </span>
+    <span
+      aria-hidden="true"
+      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-[#2552DC] text-white shadow-[0_9px_24px_rgba(37,82,220,0.24)] ${styles.frame} ${className}`}
+    >
+      <Activity
+        className={`${styles.pulse} -translate-x-0.5`}
+        strokeWidth={3.4}
+      />
+      <span
+        className={`absolute top-1/2 -translate-y-1/2 bg-[#64DFB4] ${styles.block}`}
+      />
     </span>
   );
 }

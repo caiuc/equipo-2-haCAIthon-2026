@@ -133,6 +133,15 @@ export function emptyStructure(transcript: string): ClinicalStructure {
   };
 }
 
+export function withDerivedEvents(
+  structure: ClinicalStructure,
+): ClinicalStructure {
+  return enrichStructure({
+    ...structure,
+    events: eventsFromFlags(structure),
+  });
+}
+
 export function countsAsIcuDemand(certainty: IcuCertainty): boolean {
   return certainty === "confirmed";
 }

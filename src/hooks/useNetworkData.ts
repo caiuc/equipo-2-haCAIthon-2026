@@ -6,6 +6,8 @@ import type {
   DischargePipeline,
   Hospital,
   HospitalCapacity,
+  Patient,
+  Professional,
   TransferSuggestion,
   VoiceRecord,
 } from "@shared/database.types";
@@ -17,6 +19,8 @@ export type NetworkSnapshot = {
   capacities: HospitalCapacity[];
   events: ClinicalEvent[];
   voices: VoiceRecord[];
+  patients: Patient[];
+  professionals: Professional[];
   pipelines: DischargePipeline[];
   transfers: TransferSuggestion[];
 };
@@ -26,6 +30,8 @@ const empty: NetworkSnapshot = {
   capacities: [],
   events: [],
   voices: [],
+  patients: [],
+  professionals: [],
   pipelines: [],
   transfers: [],
 };
@@ -44,6 +50,8 @@ export function useNetworkData(hospitalId = DEMO_HOSPITAL_ID) {
       capacities,
       events,
       voices,
+      patients,
+      professionals,
       pipelines,
       transfers,
     ] = await Promise.all([
@@ -59,6 +67,8 @@ export function useNetworkData(hospitalId = DEMO_HOSPITAL_ID) {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(40),
+      supabase.from("patients").select("*").order("created_at", { ascending: false }),
+      supabase.from("professionals").select("*").order("display_name"),
       supabase.from("discharge_pipeline").select("*"),
       supabase.from("transfer_suggestions").select("*").order("created_at", {
         ascending: false,
@@ -69,6 +79,8 @@ export function useNetworkData(hospitalId = DEMO_HOSPITAL_ID) {
       capacities.error ||
       events.error ||
       voices.error ||
+      patients.error ||
+      professionals.error ||
       pipelines.error ||
       transfers.error;
     if (firstError) {
@@ -82,6 +94,8 @@ export function useNetworkData(hospitalId = DEMO_HOSPITAL_ID) {
       capacities: capacities.data ?? [],
       events: events.data ?? [],
       voices: voices.data ?? [],
+      patients: patients.data ?? [],
+      professionals: professionals.data ?? [],
       pipelines: pipelines.data ?? [],
       transfers: transfers.data ?? [],
     });

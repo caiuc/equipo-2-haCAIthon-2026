@@ -77,7 +77,7 @@ export function NetworkMap() {
       <section className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--paper)]">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3">
           <div className="flex items-center gap-3">
-            <SirenaLogo size={36} />
+            <SirenaLogo size="md" />
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--blue)]">
                 Gestión centralizada de casos · Región Metropolitana

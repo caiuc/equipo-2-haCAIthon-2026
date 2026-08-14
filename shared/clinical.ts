@@ -48,6 +48,7 @@ export interface BedAction {
 
 export interface ClinicalStructure {
   patient_code_hint: string | null;
+  patient_name: string | null;
   sex: "M" | "F" | null;
   age_years: number | null;
   requires_hospitalization: boolean | null;
@@ -112,6 +113,7 @@ export function bedActionLabel(
 export function emptyStructure(transcript: string): ClinicalStructure {
   return {
     patient_code_hint: null,
+    patient_name: null,
     sex: null,
     age_years: null,
     requires_hospitalization: null,
@@ -136,10 +138,7 @@ export function emptyStructure(transcript: string): ClinicalStructure {
 export function withDerivedEvents(
   structure: ClinicalStructure,
 ): ClinicalStructure {
-  return enrichStructure({
-    ...structure,
-    events: eventsFromFlags(structure),
-  });
+  return enrichStructure(structure);
 }
 
 export function countsAsIcuDemand(certainty: IcuCertainty): boolean {
@@ -149,6 +148,7 @@ export function countsAsIcuDemand(certainty: IcuCertainty): boolean {
 export function demandIncrements(
   structure: ClinicalStructure,
 ): Partial<Record<BedKind, number>> {
+  if (structure.discharge_ordered) return {};
   const delta: Partial<Record<BedKind, number>> = {};
   if (structure.icu.certainty === "confirmed") {
     delta.uci = 1;
@@ -165,6 +165,31 @@ export function demandIncrements(
     delta.basica = 1;
   }
   return delta;
+}
+
+export function applyOperationalDefaults(
+  structure: ClinicalStructure,
+): ClinicalStructure {
+  const next: ClinicalStructure = {
+    ...structure,
+    patient_name: structure.patient_name?.replace(/\s+/g, " ").trim() || null,
+  };
+  const specificBed =
+    next.icu.certainty === "confirmed" ||
+    next.icu.certainty === "possible" ||
+    next.icu.certainty === "conditional" ||
+    next.uti_required === true ||
+    next.basic_bed_required === true;
+  const needsBed = next.requires_hospitalization === true || specificBed;
+  if (!needsBed || next.discharge_ordered) return next;
+  next.requires_hospitalization = true;
+  const typed =
+    next.icu.certainty === "confirmed" ||
+    next.icu.certainty === "possible" ||
+    next.icu.certainty === "conditional" ||
+    next.uti_required === true;
+  if (!typed) next.basic_bed_required = true;
+  return next;
 }
 
 export function deriveBedActions(structure: ClinicalStructure): BedAction[] {
@@ -214,14 +239,15 @@ export function deriveCriticality(structure: ClinicalStructure): Criticality {
 }
 
 export function enrichStructure(structure: ClinicalStructure): ClinicalStructure {
-  const next: ClinicalStructure = {
+  const next = applyOperationalDefaults({
     ...structure,
     clinical_summary:
       structure.clinical_summary?.trim() ||
       structure.relevant_condition ||
       null,
     analysis: structure.analysis?.trim() ? structure.analysis.trim() : null,
-  };
+  });
+  next.events = eventsFromFlags(next);
   next.bed_actions = deriveBedActions(next);
   next.criticality = deriveCriticality(next);
   return next;

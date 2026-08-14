@@ -1,7 +1,30 @@
 export const SLICE_MS = 4000;
 
 export const CLINICAL_STT_PROMPT =
-  "Dictado clínico en español de Chile, servicio de urgencia. Vocabulario: paciente, hospitalización, UCI, UTI, cama básica, aislamiento, alta médica, insuficiencia respiratoria.";
+  "Dictado clínico en español de Chile, urgencia. Transcribe nombres propios, edad y sexo tal como se dicen. Vocabulario: paciente, se llama, hospitalización, internación, ingreso, cama, cama básica, UCI, UTI, cuidados intensivos, cuidados intermedios, aislamiento, alta médica, insuficiencia respiratoria, requiere cama.";
+
+export function repairClinicalTranscript(text: string): string {
+  let next = text.replace(/\s+/g, " ").trim();
+  const replacements: Array<[RegExp, string]> = [
+    [/\b(?:u\s*[.\-]?\s*c\s*[.\-]?\s*i)\b/gi, "UCI"],
+    [/\b(?:u\s*[.\-]?\s*t\s*[.\-]?\s*i)\b/gi, "UTI"],
+    [/\bhuci\b/gi, "UCI"],
+    [/\búci\b/gi, "UCI"],
+    [/\busy\b/gi, "UCI"],
+    [/\buty\b/gi, "UTI"],
+    [/\butí\b/gi, "UTI"],
+    [/\bospitalizaci[oó]n\b/gi, "hospitalización"],
+    [/\bhospitalizacion\b/gi, "hospitalización"],
+    [/\binternacion\b/gi, "internación"],
+    [/\bcama b[áa]sica[s]?\b/gi, "cama básica"],
+    [/\balta medica\b/gi, "alta médica"],
+    [/\baislament[oa]\b/gi, "aislamiento"],
+  ];
+  for (const [pattern, replacement] of replacements) {
+    next = next.replace(pattern, replacement);
+  }
+  return next;
+}
 
 export function joinTranscriptParts(
   parts: Array<string | undefined>,
@@ -47,5 +70,5 @@ export function parseWhisperText(data: unknown): string {
     data && typeof data === "object" && "text" in data
       ? String((data as { text?: unknown }).text ?? "")
       : "";
-  return text.replace(/\s+/g, " ").trim();
+  return repairClinicalTranscript(text);
 }

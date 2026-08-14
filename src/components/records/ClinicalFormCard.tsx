@@ -33,9 +33,21 @@ export function ClinicalFormCard({
             className={fieldClass}
             disabled={readOnly}
             value={value.patient_code_hint ?? ""}
-            placeholder="PAC-…"
+            placeholder="Se genera al publicar"
             onChange={(event) =>
               patch({ patient_code_hint: event.target.value || null })
+            }
+          />
+        </label>
+        <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+          Nombre
+          <input
+            className={fieldClass}
+            disabled={readOnly}
+            value={value.patient_name ?? ""}
+            placeholder="Si se dictó"
+            onChange={(event) =>
+              patch({ patient_name: event.target.value || null })
             }
           />
         </label>

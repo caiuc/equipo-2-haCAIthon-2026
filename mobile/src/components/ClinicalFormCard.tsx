@@ -29,7 +29,7 @@ export function ClinicalFormCard({
             editable={!readOnly}
             className="mt-1 rounded-xl border border-line bg-paper px-3 py-2 text-sm text-ink"
             value={value.patient_code_hint ?? ""}
-            placeholder="PAC-…"
+            placeholder="Se genera al publicar"
             onChangeText={(text) => patch({ patient_code_hint: text || null })}
           />
         </Field>
@@ -46,6 +46,16 @@ export function ClinicalFormCard({
           />
         </Field>
       </View>
+
+      <Field label="Nombre">
+        <TextInput
+          editable={!readOnly}
+          className="mt-1 rounded-xl border border-line bg-paper px-3 py-2 text-sm text-ink"
+          value={value.patient_name ?? ""}
+          placeholder="Si se dictó un nombre"
+          onChangeText={(text) => patch({ patient_name: text || null })}
+        />
+      </Field>
 
       <Field label="Resumen clínico">
         <TextInput

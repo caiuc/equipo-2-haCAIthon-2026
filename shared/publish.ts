@@ -1,4 +1,4 @@
-import type { ClinicalStructure } from "./clinical";
+import type { BedKind, ClinicalStructure } from "./clinical";
 import { demandIncrements, enrichStructure } from "./clinical";
 import type { Database, Json } from "./database.types";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -28,46 +28,7 @@ export async function publishClinicalConfirmation(
   const durationSeconds = input.durationSeconds;
   const edited = Boolean(input.edited);
   const now = new Date().toISOString();
-
-  let patientId: string | null = null;
-  if (structure.patient_code_hint) {
-    const code = structure.patient_code_hint.toUpperCase();
-    const existing = await supabase
-      .from("patients")
-      .select("id")
-      .eq("code", code)
-      .maybeSingle();
-    if (existing.data?.id) {
-      patientId = existing.data.id;
-    } else {
-      const created = await supabase
-        .from("patients")
-        .insert({
-          code,
-          hospital_id: hospitalId,
-          sex: structure.sex,
-          age_years: structure.age_years,
-        })
-        .select("id")
-        .single();
-      if (created.error) throw new Error(created.error.message);
-      patientId = created.data.id;
-    }
-  } else {
-    const suffix = String(Date.now()).slice(-5);
-    const created = await supabase
-      .from("patients")
-      .insert({
-        code: `PAC-${suffix}`,
-        hospital_id: hospitalId,
-        sex: structure.sex,
-        age_years: structure.age_years,
-      })
-      .select("id")
-      .single();
-    if (created.error) throw new Error(created.error.message);
-    patientId = created.data.id;
-  }
+  const patientId = await upsertPatient(supabase, hospitalId, structure);
 
   const voice = await supabase
     .from("voice_records")
@@ -100,6 +61,7 @@ export async function publishClinicalConfirmation(
     analysis: structure.analysis,
     clinical_summary: structure.clinical_summary,
     vital_risk: structure.vital_risk,
+    patient_name: structure.patient_name,
     edited,
   } as unknown as Json;
 
@@ -120,25 +82,21 @@ export async function publishClinicalConfirmation(
     if (inserted.error) throw new Error(inserted.error.message);
   }
 
-  const deltas = demandIncrements(structure);
-  for (const [kind, amount] of Object.entries(deltas)) {
+  const occupy = demandIncrements(structure);
+  for (const [kind, amount] of Object.entries(occupy)) {
     if (!amount) continue;
-    const current = await supabase
-      .from("hospital_capacity")
-      .select("demand_waiting")
-      .eq("hospital_id", hospitalId)
-      .eq("bed_kind", kind as "uci" | "uti" | "basica")
-      .single();
-    if (current.error) throw new Error(current.error.message);
-    const updated = await supabase
-      .from("hospital_capacity")
-      .update({
-        demand_waiting: current.data.demand_waiting + amount,
-        updated_at: now,
-      })
-      .eq("hospital_id", hospitalId)
-      .eq("bed_kind", kind as "uci" | "uti" | "basica");
-    if (updated.error) throw new Error(updated.error.message);
+    await applyCapacityDelta(
+      supabase,
+      hospitalId,
+      kind as BedKind,
+      amount,
+      now,
+    );
+  }
+
+  const vacate = structure.bed_actions.find((item) => item.action === "vacate");
+  if (vacate) {
+    await applyCapacityDelta(supabase, hospitalId, vacate.kind, -1, now);
   }
 
   if (structure.discharge_ordered) {
@@ -163,4 +121,85 @@ export async function publishClinicalConfirmation(
     patientId,
     message: "Publicado en la consola central",
   };
+}
+
+async function upsertPatient(
+  supabase: SupabaseClient<Database>,
+  hospitalId: string,
+  structure: ClinicalStructure,
+): Promise<string> {
+  const code = structure.patient_code_hint?.trim()
+    ? structure.patient_code_hint.toUpperCase()
+    : `PAC-${String(Date.now()).slice(-5)}`;
+  const existing = await supabase
+    .from("patients")
+    .select("id")
+    .eq("code", code)
+    .maybeSingle();
+  const patientId = existing.data?.id
+    ? existing.data.id
+    : await insertPatient(supabase, {
+        code,
+        hospital_id: hospitalId,
+        sex: structure.sex,
+        age_years: structure.age_years,
+      });
+  if (structure.patient_name) {
+    void supabase
+      .from("patients")
+      .update({
+        display_name: structure.patient_name,
+        sex: structure.sex,
+        age_years: structure.age_years,
+      })
+      .eq("id", patientId);
+  }
+  return patientId;
+}
+
+async function insertPatient(
+  supabase: SupabaseClient<Database>,
+  row: Database["public"]["Tables"]["patients"]["Insert"],
+): Promise<string> {
+  const created = await supabase.from("patients").insert(row).select("id").single();
+  if (created.error) throw new Error(created.error.message);
+  return created.data.id;
+}
+
+async function applyCapacityDelta(
+  supabase: SupabaseClient<Database>,
+  hospitalId: string,
+  kind: BedKind,
+  amount: number,
+  now: string,
+) {
+  const current = await supabase
+    .from("hospital_capacity")
+    .select(
+      "demand_waiting, occupied, effective_available, physical_beds, out_of_service, unstaffed",
+    )
+    .eq("hospital_id", hospitalId)
+    .eq("bed_kind", kind)
+    .single();
+  if (current.error) throw new Error(current.error.message);
+  const nextOccupied = Math.max(0, current.data.occupied + amount);
+  const demand = Math.max(0, current.data.demand_waiting + amount);
+  const effective = Math.max(
+    0,
+    current.data.physical_beds -
+      current.data.out_of_service -
+      current.data.unstaffed -
+      nextOccupied,
+  );
+  const updated = await supabase
+    .from("hospital_capacity")
+    .update({
+      demand_waiting: demand,
+      occupied: nextOccupied,
+      effective_available: effective,
+      updated_at: now,
+    })
+    .eq("hospital_id", hospitalId)
+    .eq("bed_kind", kind);
+  if (updated.error) throw new Error(updated.error.message);
 }

@@ -29,6 +29,7 @@ export type RecordDetailView = {
   events: RecordEventView[];
   criticalEvents: RecordEventView[];
   form: {
+    name: string | null;
     patient: string;
     sex: string;
     age: string;
@@ -103,6 +104,10 @@ function snapshotFromJson(
     ...fallback,
     patient_code_hint:
       typeof raw.patient_code_hint === "string" ? raw.patient_code_hint : null,
+    patient_name:
+      typeof raw.patient_name === "string" && raw.patient_name.trim()
+        ? raw.patient_name.trim()
+        : null,
     sex: raw.sex === "M" || raw.sex === "F" ? raw.sex : null,
     age_years: typeof raw.age_years === "number" ? raw.age_years : null,
     requires_hospitalization:
@@ -218,6 +223,7 @@ export function buildRecordDetail(
     criticalEvents: views.filter((item) => item.critical),
     form: {
       patient: structure.patient_code_hint ?? "nuevo",
+      name: structure.patient_name,
       sex: sexLabel(structure.sex),
       age: structure.age_years ? `${structure.age_years} años` : "—",
       summary: structure.clinical_summary,

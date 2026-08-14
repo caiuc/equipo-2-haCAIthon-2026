@@ -58,6 +58,7 @@ create table public.patients (
   hospital_id text not null references public.hospitals(id),
   sex text,
   age_years integer,
+  display_name text,
   created_at timestamptz not null default now()
 );
 

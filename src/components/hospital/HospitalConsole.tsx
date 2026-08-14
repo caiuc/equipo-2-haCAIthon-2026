@@ -360,13 +360,19 @@ function AdmissionsView({
                 const professional = record.voice.professional_id
                   ? professionalById.get(record.voice.professional_id)
                   : undefined;
+                const identity = patientIdentity(patient, record.voice, record.events);
                 return (
                   <tr
                     key={record.voice.id}
                     className={`group ${state.pending ? "bg-[var(--amber-soft)]" : "bg-[var(--wash)]"}`}
                   >
-                    <td className={`border-l-4 px-4 py-4 font-mono text-sm font-semibold ${state.pending ? "border-[var(--amber)]" : "border-[var(--green)]"}`}>
-                      {patient?.code ?? "PAC-SIN-CÓDIGO"}
+                    <td className={`border-l-4 px-4 py-4 text-sm font-semibold ${state.pending ? "border-[var(--amber)]" : "border-[var(--green)]"}`}>
+                      <span className="block">{identity.title}</span>
+                      {identity.name && identity.code ? (
+                        <span className="mt-0.5 block font-mono text-[11px] text-[var(--muted)]">
+                          {identity.code}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-4 py-4 font-mono text-xs text-[var(--muted)]">
                       {formatTime(record.voice.created_at)}
@@ -428,6 +434,9 @@ function TranscriptView({
   const professional = selected?.voice.professional_id
     ? professionalById.get(selected.voice.professional_id)
     : undefined;
+  const identity = selected
+    ? patientIdentity(patient, selected.voice, selected.events)
+    : null;
   const state = selected ? recordState(selected) : null;
 
   return (
@@ -455,8 +464,8 @@ function TranscriptView({
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs font-semibold">
-                    {itemPatient?.code ?? "PAC-SIN-CÓDIGO"}
+                  <span className="text-xs font-semibold">
+                    {patientIdentity(itemPatient, record.voice, record.events).title}
                   </span>
                   <span className="font-mono text-[10px] text-[var(--muted)]">
                     {formatTime(record.voice.created_at)}
@@ -478,7 +487,7 @@ function TranscriptView({
               <div className="flex items-center gap-2">
                 <FileAudio2 className="h-5 w-5 text-[var(--blue)]" />
                 <h2 className="text-xl font-semibold tracking-tight">
-                  {patient?.code ?? "Paciente sin código"}
+                  {identity?.title ?? "Paciente sin código"}
                 </h2>
               </div>
               <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--muted)]">
@@ -638,7 +647,8 @@ function TranscriptFormSnapshot({
 }) {
   const detail = buildRecordDetail(voice, events);
   const facts = [
-    ["Paciente", detail.form.patient],
+    ["Nombre", detail.form.name ?? "No dictado"],
+    ["Código", detail.form.patient],
     ["Sexo", detail.form.sex],
     ["Edad", detail.form.age],
     ["Riesgo vital", detail.form.vitalRisk],
@@ -721,6 +731,20 @@ function TranscriptFormSnapshot({
       ) : null}
     </div>
   );
+}
+
+function patientIdentity(
+  patient: Patient | undefined,
+  voice: VoiceRecord,
+  events: ClinicalEvent[],
+) {
+  const name = patient?.display_name || buildRecordDetail(voice, events).form.name;
+  const code = patient?.code ?? null;
+  return {
+    name,
+    code,
+    title: name || code || "PAC-SIN-CÓDIGO",
+  };
 }
 
 function formatRequirement(events: ClinicalEvent[]) {

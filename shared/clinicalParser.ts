@@ -1,10 +1,5 @@
-import {
-  enrichStructure,
-  emptyStructure,
-  type ClinicalStructure,
-  type EventKind,
-  type IcuCertainty,
-} from "./clinical";
+import { emptyStructure, enrichStructure, type ClinicalStructure } from "./clinical";
+import { repairClinicalTranscript } from "./stt";
 
 function normalize(text: string): string {
   return text
@@ -21,38 +16,176 @@ const CONDITIONS: Array<[RegExp, string]> = [
   [/avc|accidente cerebrovascular/, "accidente cerebrovascular"],
 ];
 
+const NAME_STOP = new Set([
+  "el",
+  "la",
+  "los",
+  "las",
+  "de",
+  "del",
+  "un",
+  "una",
+  "con",
+  "sin",
+  "por",
+  "para",
+  "en",
+  "al",
+  "se",
+  "su",
+  "sus",
+  "paciente",
+  "masculino",
+  "femenino",
+  "hombre",
+  "mujer",
+  "nino",
+  "nina",
+  "ano",
+  "anos",
+  "edad",
+  "sexo",
+  "hospitalizacion",
+  "hospitalizado",
+  "hospitalizada",
+  "internacion",
+  "ingreso",
+  "ingresa",
+  "uci",
+  "uti",
+  "usi",
+  "cama",
+  "basica",
+  "basico",
+  "aislamiento",
+  "alta",
+  "medica",
+  "requiere",
+  "requerimiento",
+  "indica",
+  "indicacion",
+  "posible",
+  "probablemente",
+  "confirmada",
+  "confirmado",
+  "estable",
+  "insuficiencia",
+  "respiratoria",
+  "dolor",
+  "toracico",
+  "sepsis",
+  "codigo",
+  "pac",
+  "rut",
+  "cuidados",
+  "intensivos",
+  "intermedios",
+  "nombre",
+  "llamado",
+  "llamada",
+  "don",
+  "dona",
+  "sr",
+  "sra",
+  "senor",
+  "senora",
+]);
+
+function titleCase(word: string): string {
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
+
+export function extractPatientName(text: string): string | null {
+  const source = text.replace(/\s+/g, " ").trim();
+  const patterns = [
+    /se llama\s+([a-záéíóúñA-ZÁÉÍÓÚÑ]+(?:\s+[a-záéíóúñA-ZÁÉÍÓÚÑ]+){0,4})/i,
+    /nombre(?:\s+del\s+paciente)?\s+([a-záéíóúñA-ZÁÉÍÓÚÑ]+(?:\s+[a-záéíóúñA-ZÁÉÍÓÚÑ]+){0,4})/i,
+    /paciente(?:\s+de\s+nombre)?\s+([a-záéíóúñA-ZÁÉÍÓÚÑ]+(?:\s+[a-záéíóúñA-ZÁÉÍÓÚÑ]+){0,4})/i,
+  ];
+  for (const pattern of patterns) {
+    const match = source.match(pattern);
+    if (!match) continue;
+    const name = cleanName(match[1]);
+    if (name) return name;
+  }
+  return null;
+}
+
+function cleanName(raw: string): string | null {
+  const kept: string[] = [];
+  for (const part of raw.split(/\s+/).filter(Boolean)) {
+    const key = normalize(part);
+    if (/^\d/.test(key) || key.startsWith("pac")) break;
+    const particle = key === "de" || key === "del" || key === "la";
+    if (NAME_STOP.has(key) && !particle) {
+      if (kept.length) break;
+      continue;
+    }
+    if (particle && kept.length === 0) continue;
+    kept.push(titleCase(part));
+    const meaningful = kept.filter(
+      (item) => !["De", "Del", "La"].includes(item),
+    ).length;
+    if (meaningful >= 3) break;
+  }
+  while (kept.length && ["De", "Del", "La"].includes(kept[kept.length - 1])) {
+    kept.pop();
+  }
+  if (kept.length < 1) return null;
+  if (kept.every((item) => item.length < 3 && !["De", "Del", "La"].includes(item))) {
+    return null;
+  }
+  return kept.join(" ");
+}
+
 export function parseClinicalText(text: string): ClinicalStructure {
-  const transcript = text.trim();
+  const transcript = repairClinicalTranscript(text);
   const folded = normalize(transcript);
   const result = emptyStructure(transcript);
 
   const code = transcript.match(/\b(PAC-?\d{3,6})\b/i);
   if (code) {
-    result.patient_code_hint = code[1].toUpperCase().replace("PAC", "PAC-").replace("PAC--", "PAC-");
+    result.patient_code_hint = code[1]
+      .toUpperCase()
+      .replace("PAC", "PAC-")
+      .replace("PAC--", "PAC-");
     if (!result.patient_code_hint.startsWith("PAC-")) {
       result.patient_code_hint = `PAC-${code[1].replace(/\D/g, "")}`;
     }
   }
+  result.patient_name = extractPatientName(transcript);
 
   if (/femenin|mujer\b/.test(folded)) result.sex = "F";
   else if (/masculin|hombre\b/.test(folded)) result.sex = "M";
 
-  const age = folded.match(/(\d{1,3})\s*a(?:nos|nios)?\b/) ?? folded.match(/(\d{1,3})\s*a\b/);
+  const age =
+    folded.match(/(\d{1,3})\s*a(?:nos|nios)?\b/) ?? folded.match(/(\d{1,3})\s*a\b/);
   if (age) result.age_years = Number(age[1]);
 
   const uncertain =
-    /probablemente|posible|podria|si empeora|por confirmar|pendiente/.test(folded);
-  const mentionsIcu = /\buci\b|\bitu\b|cuidados intensivos/.test(folded);
+    /probablemente|posible|podria|si empeora|por confirmar|pendiente/.test(
+      folded,
+    );
+  const mentionsIcu =
+    /\buci\b|\busi\b|cuidados intensivos|unidad de cuidados intensivos/.test(
+      folded,
+    );
   const mentionsUti = /\buti\b|cuidados intermedios/.test(folded);
-  const deniesIcu = /no (necesita|requiere) uci|sin requerimiento uci/.test(folded);
-  const discharge = /\balta medica\b|\bse da de alta\b|\begreso\b|\balta\b/.test(folded);
-  const isolation = /aislamiento/.test(folded);
-  const hospitalization = /hospitaliz|se indica internacion|ingreso hospitalario/.test(
+  const deniesIcu = /no (necesita|requiere) uci|sin requerimiento uci/.test(
     folded,
   );
-  const basicBed = /cama basica|hospitalizacion basica/.test(folded);
+  const discharge =
+    /\balta medica\b|\bse da de alta\b|\begreso\b|\balta\b/.test(folded);
+  const isolation = /aislamiento/.test(folded);
+  const hospitalization =
+    /hospitaliz|ospitaliz|internac|internar|se interna|queda internad|ingreso hospital|se indica ingreso|requier\w* hospital|necesita hospital/.test(
+      folded,
+    );
+  const mentionsBed = /\bcama(s)?\b/.test(folded);
+  const basicBed =
+    /cama basica|hospitalizacion basica|cama de hospitalizacion/.test(folded);
 
-  let certainty: IcuCertainty = "not_required";
+  let certainty: ClinicalStructure["icu"]["certainty"] = "not_required";
   let icuConfidence: number | null = null;
   if (deniesIcu) {
     certainty = "not_required";
@@ -66,15 +199,16 @@ export function parseClinicalText(text: string): ClinicalStructure {
   }
 
   result.icu = { certainty, confidence: icuConfidence };
-  result.requires_hospitalization = hospitalization || mentionsIcu || mentionsUti || basicBed
-    ? true
-    : discharge
-      ? false
-      : null;
+  result.requires_hospitalization =
+    hospitalization || mentionsIcu || mentionsUti || basicBed || mentionsBed
+      ? true
+      : discharge
+        ? false
+        : null;
   result.uti_required = mentionsUti || null;
-  result.basic_bed_required = basicBed || (hospitalization && !mentionsIcu && !mentionsUti) || null;
+  result.basic_bed_required = basicBed || null;
   result.isolation_required = isolation || null;
-  result.discharge_ordered = discharge && !hospitalization;
+  result.discharge_ordered = discharge && !hospitalization && !mentionsBed;
   result.vital_risk = /riesgo vital|inestable|choque|shock|paro|critico/.test(
     folded,
   )
@@ -88,17 +222,6 @@ export function parseClinicalText(text: string): ClinicalStructure {
     }
   }
 
-  const events: EventKind[] = [];
-  if (result.requires_hospitalization) events.push("REQUIRES_HOSPITALIZATION");
-  if (certainty === "possible" || certainty === "conditional") {
-    events.push("POSSIBLE_ICU_REQUIREMENT");
-  }
-  if (certainty === "confirmed") events.push("ICU_CONFIRMED");
-  if (result.uti_required) events.push("UTI_REQUIRED");
-  if (result.basic_bed_required) events.push("BASIC_BED_REQUIRED");
-  if (result.isolation_required) events.push("ISOLATION_REQUIRED");
-  if (result.discharge_ordered) events.push("DISCHARGE_ORDERED");
-  result.events = events;
   result.source = "regex";
   return enrichStructure(result);
 }
@@ -112,6 +235,9 @@ export type LiveChip = {
 export function detectLiveChips(text: string): LiveChip[] {
   const parsed = parseClinicalText(text);
   const chips: LiveChip[] = [];
+  if (parsed.patient_name) {
+    chips.push({ id: "name", label: parsed.patient_name, tone: "ok" });
+  }
   if (parsed.age_years) {
     chips.push({ id: "age", label: `${parsed.age_years} años`, tone: "ok" });
   }

@@ -15,7 +15,7 @@ export function RecordDetailBody({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-lg font-semibold">
-            Paciente {detail.form.patient}
+            Paciente {detail.form.name ?? detail.form.patient}
           </p>
           <p className="mt-1 text-xs text-[var(--muted)]">
             {detail.form.sex} · {detail.form.age}

@@ -119,6 +119,7 @@ export interface Database {
           id: string;
           code: string;
           hospital_id: string;
+          display_name?: string | null;
           sex: string | null;
           age_years: number | null;
           created_at: string;
@@ -127,6 +128,7 @@ export interface Database {
           id?: string;
           code: string;
           hospital_id: string;
+          display_name?: string | null;
           sex?: string | null;
           age_years?: number | null;
           created_at?: string;

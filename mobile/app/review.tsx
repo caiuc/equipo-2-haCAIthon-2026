@@ -57,7 +57,7 @@ export default function ReviewScreen() {
       <View className="flex-row items-start justify-between">
         <View className="flex-1 pr-3">
           <Text className="text-lg font-semibold text-ink">
-            Paciente {form.patient_code_hint ?? "nuevo"}
+            Paciente {form.patient_name ?? form.patient_code_hint ?? "nuevo"}
           </Text>
           <Text className="mt-1 text-xs text-muted">
             Formulario propuesto · editable antes de publicar

@@ -30,6 +30,7 @@ import {
   withDerivedEvents,
 } from "@shared/clinical";
 import { parseClinicalText } from "@shared/clinicalParser";
+import { repairClinicalTranscript } from "@shared/stt";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const PHASE_COPY = {
@@ -92,7 +93,7 @@ export function VoiceRegistro() {
   const phaseCopy = PHASE_COPY[capture.phase];
 
   useEffect(() => {
-    const text = capture.transcript.trim();
+    const text = repairClinicalTranscript(capture.transcript);
     const requestId = ++requestSequence.current;
     if (!text) {
       const emptyHandle = window.setTimeout(() => {
@@ -153,7 +154,7 @@ export function VoiceRegistro() {
         ? withDerivedEvents({
             ...current,
             ...patch,
-            transcript: capture.finalTranscript,
+            transcript: repairClinicalTranscript(capture.finalTranscript),
           })
         : current,
     );
@@ -191,7 +192,9 @@ export function VoiceRegistro() {
     try {
       const finalStructure = withDerivedEvents({
         ...structured,
-        transcript: capture.finalTranscript || structured.transcript,
+        transcript: repairClinicalTranscript(
+          capture.finalTranscript || structured.transcript,
+        ),
       });
       const result = await publishClinicalConfirmation(supabase, {
         hospitalId: DEMO_HOSPITAL_ID,
@@ -472,9 +475,20 @@ export function VoiceRegistro() {
                     className="sirena-input"
                     disabled={!canEdit}
                     value={structured.patient_code_hint ?? ""}
-                    placeholder="PAC-00000"
+                    placeholder="Se genera al publicar"
                     onChange={(event) =>
                       patchStructure({ patient_code_hint: event.target.value || null })
+                    }
+                  />
+                </Field>
+                <Field label="Nombre del paciente">
+                  <input
+                    className="sirena-input"
+                    disabled={!canEdit}
+                    value={structured.patient_name ?? ""}
+                    placeholder="Si se dictó un nombre"
+                    onChange={(event) =>
+                      patchStructure({ patient_name: event.target.value || null })
                     }
                   />
                 </Field>
@@ -535,7 +549,12 @@ export function VoiceRegistro() {
                     onChange={(event) =>
                       patchStructure({
                         requires_hospitalization:
-                          event.target.value === "" ? null : event.target.value === "yes",
+                          event.target.value === ""
+                            ? null
+                            : event.target.value === "yes",
+                        ...(event.target.value === "no"
+                          ? { basic_bed_required: false }
+                          : {}),
                       })
                     }
                   >

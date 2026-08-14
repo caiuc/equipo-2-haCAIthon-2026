@@ -1,29 +1,31 @@
 import { Providers } from "@/components/Providers";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const ibmSans = IBM_Plex_Sans({
+  variable: "--font-ibm-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const ibmMono = IBM_Plex_Mono({
+  variable: "--font-ibm-mono",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
   title: "Continuidad Vital",
   description:
-    "Centro de coordinación para proteger tratamientos críticos durante una catástrofe. Datos ficticios de demostración.",
+    "Voz clínica deliberada → eventos operacionalmente estructurados para la red hospitalaria. Datos sintéticos.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} light h-full antialiased`}
+      className={`${ibmSans.variable} ${ibmMono.variable} light h-full antialiased`}
     >
       <body className="min-h-full">
         <Providers>{children}</Providers>

@@ -2,6 +2,9 @@
 
 # dependencies
 /node_modules
+/mobile/node_modules
+/mobile/.expo
+/mobile/dist
 /.pnp
 .pnp.*
 .yarn/*
@@ -17,9 +20,11 @@
 /.next/
 /out/
 
-# local SQLite
+# local SQLite leftovers
 /data/*.db
 /data/*.db-journal
+/data/*.db-shm
+/data/*.db-wal
 
 # production
 /build
@@ -37,6 +42,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!mobile/.env.example
 # vercel
 .vercel
 

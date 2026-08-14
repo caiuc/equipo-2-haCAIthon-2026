@@ -1,18 +1,12 @@
-import { NextResponse } from "next/server";
+import { corsJson, corsOptions } from "@/lib/ai/cors";
+import { getSttStatus } from "@/lib/ai/transcribe";
 
 export const runtime = "nodejs";
 
-export async function GET() {
-  const apiKey = process.env.APIFY_STT_API_KEY;
-  const model = process.env.APIFY_STT_MODEL ?? "whisper-large-v3-turbo";
-  const baseUrl = process.env.APIFY_STT_BASE_URL ?? "https://api.groq.com/openai/v1";
-  const provider = /groq/.test(baseUrl)
-    ? "groq"
-    : process.env.APIFY_STT_PROVIDER || "whisper";
+export function OPTIONS() {
+  return corsOptions();
+}
 
-  return NextResponse.json({
-    available: Boolean(apiKey),
-    provider: apiKey ? provider : null,
-    model: apiKey ? model : null,
-  });
+export async function GET() {
+  return corsJson(getSttStatus());
 }

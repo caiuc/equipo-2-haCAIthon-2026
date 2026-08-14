@@ -1,115 +1,82 @@
 # Continuidad Vital — design system y contratos
 
-Fuente de verdad visual para el equipo. La UI de mapa, landing y camas vive aquí. Whisper + DeepSeek los conecta el compañero de voz **sin cambiar estos tokens ni el shape JSON**.
+SSOT de ingeniería. El pitch vive en `idea.md`. El diseño visual de referencia es `SIRENA - DISEÑO WEB, MOVIL.html` (marca: Continuidad Vital).
 
-## Marca
+## Marca y tokens
 
-Producto de **centro de operaciones de emergencia**, no un SaaS genérico.
+Producto de **red hospitalaria / UGCC**, no centro de catástrofe.
 
-- Claro por defecto (alto contraste). El modo oscuro es opcional.
-- Acento teal `#0f766e` (acción / camas libres).
-- Ámbar `#b45309` (parcial / pendiente).
-- Rojo `#b91c1c` (crítico / bloqueado / rechazado).
-- Tipografía: Geist sans para UI, Geist mono para códigos (`D-014`) y métricas.
-
-## Tokens CSS
-
-Definidos en `src/app/globals.css`:
-
-| Token | Claro | Uso |
+| Token | Valor | Uso |
 | --- | --- | --- |
-| `--bg` | `#f4f7fb` | Fondo de página |
-| `--panel` | `#ffffff` | Tarjetas y cola |
-| `--text` | `#102033` | Texto principal |
-| `--muted` | `#5b6b82` | Secundario |
-| `--teal` | `#0f766e` | CTA y camas libres |
-| `--input` | `#f8fafc` | Campos |
-| Radio | `0.75rem` (xl) | Paneles |
-| Bordes | `rgba(16, 32, 51, 0.12)` | Separadores |
+| `--bg` | `#F1F4F8` | Fondo |
+| `--paper` | `#FFFFFF` | Paneles |
+| `--ink` | `#0F1B2D` | Texto |
+| `--muted` | `#5A6A7D` | Secundario |
+| `--line` | `#E3E8EF` | Bordes |
+| `--blue` | `#1D4ED8` | CTA / red |
+| `--green` | `#0E9F6E` | Capacidad / confirmar |
+| `--amber` | `#B4690E` | Incertidumbre |
+| `--red` | `#C24632` | Déficit |
 
-No introducir púrpuras, gradientes “AI glow” ni ilustraciones stock.
+Tipografía: **IBM Plex Sans** (UI) y **IBM Plex Mono** (códigos `PAC-29384`, métricas).
 
-## División de trabajo (para no chocar en git)
+Definidos en `src/app/globals.css`.
 
-| Quién | Ruta | Carpetas |
+## Tres niveles
+
+| Ruta | Nivel | Quién |
 | --- | --- | --- |
-| Landing / mapa | `/` y `/analisis` | `src/app/(landing)/`, `src/components/landing/`, `src/components/map/`, `src/components/dashboard/` |
-| Voz / reporte | `/reporte` | `src/app/(ops)/reporte/`, `src/components/voice/`, `src/lib/intake/`, `src/app/api/transcribe/` |
+| `/` | Landing | Pitch |
+| `/registro` | 1 Profesional | Micrófono deliberado, transcripción, confirmar |
+| `/hospital` | 2 Hospital | Capacidad efectiva UCI/UTI/básica y demanda |
+| `/red` | 3 UGCC | Mapa RM, balance, derivación informativa |
 
-Layouts separados: landing no usa `AppShell`. Análisis y reporte sí.
+Redirects: `/reporte` `/urgencias` `/intake` → `/registro`. `/analisis` `/mando` → `/hospital`.
 
-## Páginas
+Mobile Expo (`mobile/`): solo nivel 1 (wearable analog).
 
-| Ruta | Rol |
+## Pipeline de voz
+
+1. Audio deliberado → `POST /api/transcribe` (Groq Whisper, `APIFY_STT_*`).
+2. Texto → `POST /api/structure` (DeepSeek, `LLM_*`). Si falla, `shared/clinicalParser.ts`.
+3. Humano pulsa **Confirmar y publicar**.
+4. Inserta `voice_records` + `clinical_events` y actualiza `demand_waiting`.
+5. Web y mobile se enteran por Supabase Realtime.
+
+`confidence` sale siempre `pending_verification` hasta el click humano.
+
+UCI **possible** o **conditional** no suma demanda.
+
+Contrato DeepSeek: ver `ClinicalStructure` en `shared/clinical.ts`.
+
+## Capacidad efectiva
+
+`effective_available = physical_beds - out_of_service - unstaffed - occupied`
+
+Balance = efectiva − demanda. La derivación en `/red` es propuesta informativa.
+
+## Base de datos
+
+SQL para el editor de Supabase (en este orden):
+
+1. `supabase/001_up.sql`
+2. `supabase/002_rls.sql`
+3. `supabase/003_seed.sql`
+
+Rollback: `supabase/099_down.sql`. Tipos: `shared/database.types.ts`.
+
+Demo sin login. RLS anon SELECT/INSERT/UPDATE. No poner `service_role` en el cliente.
+
+## Variables
+
+| Nombre | Uso |
 | --- | --- |
-| `/` | Landing |
-| `/analisis` | Cola + Mapbox + camas |
-| `/reporte` | Ingreso voz/formulario (Whisper + DeepSeek) |
-
-`/mando` redirige a `/analisis`. `/intake` redirige a `/reporte`.
-
-## Mapa
-
-- Estilo `mapbox://styles/mapbox/light-v11`.
-- Token: `MAPBOX_TOKEN` o `NEXT_PUBLIC_MAPBOX_TOKEN` (se expone al cliente en `next.config.ts`).
-- Pin de establecimiento: color operacional + **número = camas libres**.
-- Popup: estado, agua, acceso, grilla de camas.
-- Pacientes **solo por zona agregada**. Nunca un pin individual.
-- Al aprobar un traslado el mapa hace `flyTo` al centro destino.
-
-## Camas
-
-Estados de celda (`src/lib/engine/beds.ts`):
-
-| Celda | Significado |
-| --- | --- |
-| Libre (teal) | Cupo usable ahora |
-| Ocupada (slate) | Ya asignada / en uso |
-| Bloqueada (rojo) | El centro no es matcheable (sin agua, acceso, cerrado) |
-
-- **Aprobar** TRANSFER/TRANSPORT: `availableCapacity -= 1` → una cama libre pasa a ocupada.
-- **Rechazar**: el caso sigue `OPEN`, la asignación queda `REJECTED`, **no** se reserva cama.
-
-`totalCapacity` es el tamaño de la grilla. El matching sigue usando solo `availableCapacity` + agua + acceso.
-
-## Contrato Whisper → DeepSeek → UI
-
-La UI ya llama `applyStructuredUpdate(update)` después de un humano pulsar **Verificar**. DeepSeek debe devolver **exactamente** este objeto (ver `src/lib/intake/parser.ts`):
-
-```json
-{
-  "target": "facility",
-  "facilityNameHint": "Centro Norte",
-  "patientCodeHint": null,
-  "power_status": "BACKUP",
-  "backup_hours": 4,
-  "water_status": "unavailable",
-  "access_status": "BLOCKED",
-  "need_type": null,
-  "mobility": null,
-  "contact_status": null,
-  "confidence": "pending_verification",
-  "transcript": "Quedan cuatro horas de generador, no tenemos agua en el centro norte y el acceso está cortado"
-}
-```
-
-Reglas:
-
-1. `confidence` siempre `pending_verification` hasta el click humano.
-2. No diagnosticar, no fijar prioridad clínica, no descartar pacientes.
-3. Si DeepSeek falla, el formulario manual y el parser mock siguen siendo el fallback.
-4. Punto de enchufe: reemplazar la transcripción en `VoiceIntake` y, si se quiere, el `parseOperationalText` por una ruta `/api/structure` que hable con `LLM_*`. **No mutar el store directo.**
-
-## Variables de entorno (nombres)
-
-| Nombre | Quién |
-| --- | --- |
-| `MAPBOX_TOKEN` / `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapa |
-| `APIFY_STT_*` | STT de respaldo (Groq Whisper) |
-| `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` | Compañero DeepSeek |
+| `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` | Proyecto |
+| `SUPABASE_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key |
+| `MAPBOX_TOKEN` / `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapa `/red` |
+| `APIFY_STT_*` | Groq Whisper |
+| `LLM_*` | DeepSeek |
+| `EXPO_PUBLIC_API_URL` | Base de Next para el teléfono |
+| `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Cliente mobile |
 
 No commitear `.env`.
-
-## Qué no tocar
-
-Motor clínico, registros reales, SENAPRED/MINSAL, pins de pacientes, autenticación clínica, notificaciones masivas.

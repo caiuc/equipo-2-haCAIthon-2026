@@ -6,6 +6,7 @@ import { AuditFeed } from "@/components/dashboard/AuditFeed";
 import { DemoControls } from "@/components/dashboard/DemoControls";
 import { DemoScript } from "@/components/dashboard/DemoScript";
 import { MetricsHeader } from "@/components/dashboard/MetricsHeader";
+import { BedStatusPanel } from "@/components/dashboard/BedStatusPanel";
 import { FacilityBeds } from "@/components/map/FacilityBeds";
 import dynamic from "next/dynamic";
 
@@ -38,6 +39,8 @@ export function CommandCenter() {
       </div>
 
       <MetricsHeader />
+
+      <BedStatusPanel />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-h-[480px] flex-col gap-4 xl:col-span-7">

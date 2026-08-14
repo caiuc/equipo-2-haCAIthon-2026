@@ -1,6 +1,7 @@
 "use client";
 
 import { animateMetric } from "@/lib/animations/transitions";
+import { useBeds } from "@/hooks/useBeds";
 import { useDashboardMetrics } from "@/lib/mock/mockStore";
 import { useEffect, useRef } from "react";
 
@@ -69,6 +70,7 @@ function MetricCard({
 
 export function MetricsHeader() {
   const metrics = useDashboardMetrics();
+  const { metrics: bedMetrics } = useBeds();
 
   return (
     <section className="space-y-3">
@@ -82,6 +84,24 @@ export function MetricsHeader() {
             warn={card.key === "criticalAlerts" && metrics.criticalAlerts > 0}
           />
         ))}
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <MetricCard
+          label="Camas libres"
+          hint="Urgencias · sala de 8"
+          value={bedMetrics.free}
+        />
+        <MetricCard
+          label="Camas ocupadas"
+          hint="Fichas de ingreso activas"
+          value={bedMetrics.occupied}
+        />
+        <MetricCard
+          label="Críticos en urgencias"
+          hint="Estado del paciente"
+          value={bedMetrics.critical}
+          warn={bedMetrics.critical > 0}
+        />
       </div>
       <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
         <Question

@@ -34,6 +34,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <NavLink href="/reporte" active={pathname.startsWith("/reporte")}>
               Reporte
             </NavLink>
+            <NavLink href="/urgencias" active={pathname.startsWith("/urgencias")}>
+              Urgencias
+            </NavLink>
           </nav>
           <Button
             variant="ghost"

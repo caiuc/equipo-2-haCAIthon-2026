@@ -1,0 +1,25 @@
+{
+  "name": "SIRENA · HaCAithon 2026",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "forwardPorts": [
+    3000
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "Aplicación",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "postAttachCommand": {
+    "app": "npm run dev -- --hostname 0.0.0.0"
+  },
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "README.md"
+      ]
+    }
+  },
+  "postCreateCommand": "npm install",
+  "//": "El registro por voz y los paneles necesitan un proyecto Supabase propio en .env"
+}
